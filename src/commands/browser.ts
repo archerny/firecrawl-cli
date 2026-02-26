@@ -17,7 +17,7 @@ export interface BrowserLaunchOptions {
   ttl?: number;
   ttlInactivity?: number;
   profile?: string;
-  writeMode?: 'readonly' | 'readwrite';
+  saveChanges?: boolean;
   apiKey?: string;
   apiUrl?: string;
   output?: string;
@@ -53,7 +53,7 @@ export interface BrowserCloseOptions {
 export interface BrowserQuickExecuteOptions {
   code: string;
   profile?: string;
-  writeMode?: 'readonly' | 'readwrite';
+  saveChanges?: boolean;
   apiKey?: string;
   apiUrl?: string;
   output?: string;
@@ -74,7 +74,7 @@ export async function handleBrowserLaunch(
       activityTtl?: number;
       profile?: {
         name: string;
-        writeMode?: 'readonly' | 'readwrite';
+        saveChanges?: boolean;
       };
     } = {};
     if (options.ttl !== undefined) args.ttl = options.ttl;
@@ -83,7 +83,7 @@ export async function handleBrowserLaunch(
     if (options.profile) {
       args.profile = {
         name: options.profile,
-        writeMode: options.writeMode,
+        saveChanges: options.saveChanges,
       };
     }
 
@@ -291,13 +291,13 @@ export async function handleBrowserQuickExecute(
       const launchArgs: {
         profile?: {
           name: string;
-          writeMode?: 'readonly' | 'readwrite';
+          saveChanges?: boolean;
         };
       } = {};
       if (options.profile) {
         launchArgs.profile = {
           name: options.profile,
-          writeMode: options.writeMode,
+          saveChanges: options.saveChanges,
         };
       }
 

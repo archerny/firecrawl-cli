@@ -26,7 +26,7 @@ Run `firecrawl --help` or `firecrawl <command> --help` for full option details.
 Must be installed and authenticated. Check with `firecrawl --status`.
 
 ```
-  🔥 firecrawl cli v1.4.0
+  🔥 firecrawl cli v1.8.0
 
   ● Authenticated via FIRECRAWL_API_KEY
   Concurrency: 0/100 jobs (parallel scrape limit)
@@ -95,7 +95,7 @@ browser "scrape" -o .firecrawl/products-p2.md       →  extract page 2 content
 **Example: login then scrape authenticated content**
 
 ```
-browser launch-session --profile my-app  →  create a named persistent session
+browser launch-session --profile my-app  →  create a named profile
 browser "open https://app.example.com/login"        →  navigate to login
 browser "snapshot -i"                               →  find form fields
 browser "fill @e3 'user@example.com'"               →  fill email
@@ -271,9 +271,9 @@ Shorthand auto-launches a session if none exists - no setup required.
 
 Session management: `launch-session --ttl 600`, `list`, `close`
 
-Options: `--ttl <seconds>`, `--ttl-inactivity <seconds>`, `--session <id>`, `--profile <name>`, `--write-mode <readonly|readwrite>`, `-o`
+Options: `--ttl <seconds>`, `--ttl-inactivity <seconds>`, `--session <id>`, `--profile <name>`, `--no-save-changes`, `-o`
 
-**Persistent sessions** survive close and can be reconnected by name. Use them when you need to login first, then come back later to do work while already authenticated:
+**Profiles** survive close and can be reconnected by name. Use them when you need to login first, then come back later to do work while already authenticated:
 
 ```bash
 # Session 1: Login and save state
@@ -296,10 +296,10 @@ firecrawl browser close
 Read-only reconnect (no writes to session state):
 
 ```bash
-firecrawl browser launch-session --profile my-app --write-mode readonly
+firecrawl browser launch-session --profile my-app --no-save-changes
 ```
 
-Shorthand with persistent session:
+Shorthand with profile:
 
 ```bash
 firecrawl browser --profile my-app "open https://example.com"
