@@ -15,6 +15,7 @@ import { QA_TOOLS_BLOCK, validateRequired } from '../shared';
 interface Inputs {
   query: string;
   budget: string;
+  sites: string;
   context: string;
 }
 
@@ -23,7 +24,7 @@ interface Inputs {
 async function gatherInputs(prefill?: { query?: string }): Promise<Inputs> {
   // If query is prefilled, skip interactive prompts entirely
   if (prefill?.query) {
-    return { query: prefill.query, budget: '', context: '' };
+    return { query: prefill.query, budget: '', sites: '', context: '' };
   }
 
   const { input } = await import('@inquirer/prompts');
@@ -38,12 +39,19 @@ async function gatherInputs(prefill?: { query?: string }): Promise<Inputs> {
     default: '',
   });
 
-  const context = await input({
-    message: 'Any preferences? (brand, features, delivery location, etc.)',
+  const sites = await input({
+    message:
+      'Preferred site(s)? (e.g. amazon, bestbuy, newegg -- leave blank for any)',
     default: '',
   });
 
-  return { query, budget, context };
+  const context = await input({
+    message:
+      'Any other preferences? (brand, features, delivery location, etc.)',
+    default: '',
+  });
+
+  return { query, budget, sites, context };
 }
 
 // ─── System prompt ──────────────────────────────────────────────────────────
@@ -77,12 +85,14 @@ DO NOT run \`firecrawl browser list\` to look for sessions. The profile exists i
 
 ## Your Strategy
 
-### Phase 1: Research (use firecrawl scrape/search)
-1. Search the web for each product -- reviews, comparisons, Reddit threads, Wirecutter, tech blogs
-2. Scrape the top results to understand specs, pros/cons, and pricing
-3. For each item, pick the best option based on value, reviews, and the user's requirements
+Do everything sequentially -- do NOT spawn parallel subagents. Work through each step yourself, one at a time.
 
-### Phase 2: Buy (use firecrawl browser with --profile amazon)
+### Phase 1: Research (use firecrawl scrape/search)
+1. Search the web for the product -- reviews, comparisons, Reddit threads, Wirecutter, tech blogs
+2. Scrape the top results to understand specs, pros/cons, and pricing
+3. Pick the best option based on value, reviews, and the user's requirements
+
+### Phase 2: Buy (use firecrawl browser)
 1. Open Amazon with the saved profile: \`firecrawl browser "open https://www.amazon.com" --profile amazon\`
 2. For each item:
    a. Search for it on Amazon
@@ -130,6 +140,7 @@ export function register(parentCmd: Command, backend: Backend): void {
 
       const parts = [inputs.query];
       if (inputs.budget) parts.push(`Budget: ${inputs.budget}`);
+      if (inputs.sites) parts.push(`Shop on: ${inputs.sites}`);
       if (inputs.context) parts.push(inputs.context);
       const userMessage = parts.join('. ') + '.';
 

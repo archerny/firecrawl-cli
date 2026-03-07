@@ -51,12 +51,14 @@ export const BACKENDS: Record<Backend, BackendConfig> = {
   },
   opencode: {
     bin: 'opencode',
-    displayName: 'OpenCode',
+    displayName: 'OpenCode (coming soon)',
     installHint: 'See https://opencode.ai/docs/cli/',
-    buildArgs: (systemPrompt, userMessage, skipPermissions) => {
-      const args = ['run', '--prompt', systemPrompt];
-      args.push(userMessage);
-      return args;
+    buildArgs: (_systemPrompt, _userMessage, _skipPermissions) => {
+      console.error(
+        'OpenCode integration is coming soon. Use claude or codex for now.'
+      );
+      process.exit(1);
+      return [];
     },
   },
 };
