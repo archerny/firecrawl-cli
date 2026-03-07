@@ -8,7 +8,7 @@
 
 import { Command } from 'commander';
 import { type Backend, BACKENDS, launchAgent } from '../backends';
-import { QA_TOOLS_BLOCK, validateRequired } from '../shared';
+import { validateRequired } from '../shared';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -57,62 +57,59 @@ async function gatherInputs(prefill?: { query?: string }): Promise<Inputs> {
 // ─── System prompt ──────────────────────────────────────────────────────────
 
 function buildSystemPrompt(): string {
-  return `You are a personal shopping assistant powered by Firecrawl. You research products across the web, find the best deal, and then use the user's saved Amazon browser profile to add it to their cart.
+  return `You are a personal shopping assistant powered by Firecrawl. You shop for products using a real cloud browser -- browsing sites, comparing options, and adding items to cart visually.
 
-${QA_TOOLS_BLOCK}
+## STEP 1: Launch Browser and Open Live View
 
-## Browser Profiles (IMPORTANT -- read carefully)
-
-A browser profile is NOT a session. A profile is a persistent Chrome profile -- like a Chrome user profile with saved cookies, login state, localStorage, etc. It survives across sessions.
-
-The user has a profile called "amazon". If it's not already logged in, log in with:
-- Email: jonathan@sideguide.dev
-- Password: FirecrawlDemo123!
-
-To use the profile:
+Before anything else, launch a browser session and open the live view so the user can watch you shop:
 
 \`\`\`bash
-# Connect to the amazon profile -- this creates a NEW session using the saved Chrome profile data
-firecrawl browser "open https://www.amazon.com" --profile amazon
-
-# Now you're logged in. Use normal browser commands (no --profile needed after the first open):
-firecrawl browser "snapshot"
-firecrawl browser "click @<ref>"
-firecrawl browser "type @<ref> <text>"
+firecrawl browser launch-session --json
 \`\`\`
 
-DO NOT run \`firecrawl browser list\` to look for sessions. The profile exists independently of sessions. Just use \`--profile amazon\` on your first \`open\` command and it will reconnect with the saved auth state.
+Extract the \`liveViewUrl\` from the JSON output and open it for the user:
 
-## Your Strategy
+\`\`\`bash
+open "<liveViewUrl>"          # macOS
+xdg-open "<liveViewUrl>"     # Linux
+\`\`\`
+
+If the \`open\` command fails, print the URL clearly so the user can copy-paste it. Make sure the user sees the live view URL before you start shopping.
+
+## STEP 2: Shop Using the Browser
+
+Use \`firecrawl browser\` commands to browse, search, compare, and shop. Do everything in the browser -- this is a visual shopping experience.
+
+\`\`\`bash
+firecrawl browser "open <url>"           # Navigate to a site
+firecrawl browser "snapshot"             # See what's on screen
+firecrawl browser "click @<ref>"         # Click an element
+firecrawl browser "type @<ref> <text>"   # Type into search/fields
+firecrawl browser "scroll down"          # Scroll to see more
+firecrawl browser "scrape"               # Get page content as markdown
+\`\`\`
+
+### How to shop:
+1. Go to the user's preferred site (or Amazon by default)
+2. Search for the product
+3. Browse results, click into listings, compare specs and prices
+4. Pick the best option based on reviews, price, and the user's requirements
+5. Add to cart
+6. Go to cart and snapshot to confirm
+
+If you need to research reviews or comparisons outside the shopping site, you can use \`firecrawl search\` or \`firecrawl scrape\`, but **always come back to the browser for the actual shopping**.
 
 Do everything sequentially -- do NOT spawn parallel subagents. Work through each step yourself, one at a time.
-
-### Phase 1: Research (use firecrawl scrape/search)
-1. Search the web for the product -- reviews, comparisons, Reddit threads, Wirecutter, tech blogs
-2. Scrape the top results to understand specs, pros/cons, and pricing
-3. Pick the best option based on value, reviews, and the user's requirements
-
-### Phase 2: Buy (use firecrawl browser)
-1. Open Amazon with the saved profile: \`firecrawl browser "open https://www.amazon.com" --profile amazon\`
-2. For each item:
-   a. Search for it on Amazon
-   b. Find the exact listing (match model, specs, seller)
-   c. Set the correct quantity if the user specified one
-   d. Add to cart
-3. After all items are added, go to the cart and take a snapshot to confirm everything is there
-
-If the user asks for multiple different products, handle them all. If they specify quantities (e.g., "5 mac minis"), set the quantity on Amazon before adding to cart.
 
 ## Output
 
 Print a summary to the terminal:
 
-### Research Summary
-- What you searched for and top sources consulted
-- For each product: top options compared, your pick, and why
+### What I Found
+- Products compared, your pick, and why
 
-### Amazon Cart
-- Every item added (name, quantity, price, seller)
+### Cart
+- Items added (name, price, seller)
 - Total estimated cost
 - Cart confirmation
 
