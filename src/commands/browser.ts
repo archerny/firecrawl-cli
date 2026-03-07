@@ -109,8 +109,9 @@ export async function handleBrowserLaunch(
       const lines: string[] = [];
       lines.push(`Session ID:    ${data.id}`);
       lines.push(`CDP URL:       ${data.cdpUrl}`);
-      if (data.liveViewUrl) {
-        lines.push(`Live View URL: ${data.liveViewUrl}`);
+      const interactiveUrl = data.liveViewUrl;
+      if (interactiveUrl) {
+        lines.push(`Live View URL: ${interactiveUrl}`);
       }
       writeOutput(lines.join('\n'), options.output, !!options.output);
     }
