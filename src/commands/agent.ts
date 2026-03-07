@@ -201,8 +201,10 @@ export async function executeAgent(
       maxCredits?: number;
       pollInterval?: number;
       timeout?: number;
+      integration?: string;
     } = {
       prompt,
+      integration: 'cli',
     };
 
     if (options.urls && options.urls.length > 0) {

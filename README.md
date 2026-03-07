@@ -788,6 +788,76 @@ See the full documentation: **[Experimental Workflows ->](src/commands/experimen
 
 ---
 
+## Testing Workflows Locally
+
+After building the CLI (`pnpm run build`), you can test the interactive AI workflow sessions with any supported backend:
+
+### Claude Code
+
+```bash
+# See all workflows
+node dist/index.js claude --help
+
+# Run a workflow
+node dist/index.js claude deep-research "RAG pipeline tools landscape"
+node dist/index.js claude competitor-analysis https://firecrawl.dev
+node dist/index.js claude lead-research "Vercel"
+
+# Natural language passthrough (no workflow name -- just describe the task)
+node dist/index.js claude "scrape the firecrawl docs and summarize"
+```
+
+### Codex (OpenAI)
+
+```bash
+node dist/index.js codex --help
+node dist/index.js codex deep-research "web scraping best practices"
+node dist/index.js codex competitor-analysis https://crawlee.dev
+```
+
+### OpenCode
+
+```bash
+node dist/index.js opencode --help
+node dist/index.js opencode lead-research "Stripe"
+node dist/index.js opencode seo-audit https://example.com
+```
+
+Add `-y` to any command to auto-approve tool permissions (maps to `--dangerously-skip-permissions` for Claude, `--full-auto` for Codex).
+
+### Live View
+
+Use `firecrawl browser launch --json` to get a live view URL, then pass it to your agent so you can watch it work in real-time:
+
+```bash
+# Launch a browser session and grab the live view URL
+LIVE_URL=$(firecrawl browser launch --json | jq -r '.interactiveLiveViewUrl // .liveViewUrl')
+
+# Pass it to Claude Code
+claude --append-system-prompt "A cloud browser session is running. Live view: $LIVE_URL -- use \`firecrawl browser\` commands to interact." \
+  --dangerously-skip-permissions \
+  "QA test https://myapp.com using the cloud browser"
+
+# Pass it to Codex
+codex --full-auto \
+  --config "instructions=A cloud browser session is running. Live view: $LIVE_URL -- use \`firecrawl browser\` commands to interact." \
+  "walk through the signup flow on https://example.com"
+
+# Or use the built-in workflow commands (session is auto-saved for firecrawl browser)
+firecrawl browser launch --json | jq -r '.interactiveLiveViewUrl // .liveViewUrl'
+firecrawl claude demo https://resend.com
+```
+
+Each backend requires its CLI to be installed separately:
+
+| Backend  | Install                                               |
+| -------- | ----------------------------------------------------- |
+| Claude   | `npm install -g @anthropic-ai/claude-code`            |
+| Codex    | `npm install -g @openai/codex`                        |
+| OpenCode | [opencode.ai/docs/cli](https://opencode.ai/docs/cli/) |
+
+---
+
 ## Documentation
 
 For more details, visit the [Firecrawl Documentation](https://docs.firecrawl.dev).
