@@ -5,6 +5,7 @@
 
 import { execSync } from 'child_process';
 import { getApiKey } from '../utils/config';
+import { buildSkillsInstallArgs } from './skills-install';
 
 export type SetupSubcommand = 'skills' | 'mcp';
 
@@ -39,19 +40,11 @@ export async function handleSetupCommand(
 }
 
 async function installSkills(options: SetupOptions): Promise<void> {
-  const args = [
-    'npx',
-    'skills',
-    'add',
-    'firecrawl/cli',
-    '--full-depth',
-    '--global',
-    '--all',
-  ];
-
-  if (options.agent) {
-    args.push('--agent', options.agent);
-  }
+  const args = buildSkillsInstallArgs({
+    agent: options.agent,
+    global: true,
+    includeNpxYes: true,
+  });
 
   const cmd = args.join(' ');
   console.log(`Running: ${cmd}\n`);
