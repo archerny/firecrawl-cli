@@ -1,10 +1,10 @@
-name: Sync Skills
+name: Sync Firecrawl Skill to Cursor Plugin
 
 on:
   push:
     branches: [main]
     paths:
-      - 'skills/**'
+      - 'skills/firecrawl-cli/**'
   workflow_dispatch:
 
 jobs:
@@ -20,12 +20,12 @@ jobs:
         env:
           TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
-          git clone https://x-access-token:${TOKEN}@github.com/firecrawl/skills-gh-action-test.git target 2>/dev/null || {
+          git clone https://x-access-token:${TOKEN}@github.com/firecrawl/firecrawl-cursor-plugin.git target 2>/dev/null || {
             mkdir target && cd target && git init
-            git remote add origin https://x-access-token:${TOKEN}@github.com/firecrawl/skills-gh-action-test.git
+            git remote add origin https://x-access-token:${TOKEN}@github.com/firecrawl/firecrawl-cursor-plugin.git
           }
 
-      - name: Sync skills
+      - name: Sync firecrawl skill
         env:
           GH_TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
@@ -33,9 +33,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Copy skills
-          rm -rf skills
-          cp -r ../cli/skills skills
+          rm -rf skills/firecrawl
+          mkdir -p skills/firecrawl
+          cp -R ../cli/skills/firecrawl-cli/. skills/firecrawl/
 
           git add -A
           if git diff --cached --quiet; then
@@ -46,24 +46,21 @@ jobs:
           SHORT_SHA="${GITHUB_SHA:0:7}"
           COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
 
-          # Check if repo has any commits
           if ! git rev-parse HEAD >/dev/null 2>&1; then
-            # First sync — bootstrap main branch
             git checkout -b main
-            git commit -m "sync skills from firecrawl/cli (${SHORT_SHA})"
+            git commit -m "sync firecrawl skill from firecrawl/cli (${SHORT_SHA})"
             git push origin main
           else
-            # Subsequent syncs — PR workflow
-            BRANCH="sync/skills-${SHORT_SHA}"
+            BRANCH="sync/cursor-skill-${SHORT_SHA}"
             git checkout -b "$BRANCH"
-            git commit -m "sync skills from firecrawl/cli (${SHORT_SHA})"
+            git commit -m "sync firecrawl skill from firecrawl/cli (${SHORT_SHA})"
             git push origin "$BRANCH"
             PR_URL=$(gh pr create \
-              --repo firecrawl/skills-gh-action-test \
-              --title "sync skills (${SHORT_SHA})" \
-              --body "Automated sync from [firecrawl/cli@${SHORT_SHA}](${COMMIT_URL})." \
+              --repo firecrawl/firecrawl-cursor-plugin \
+              --title "sync firecrawl skill (${SHORT_SHA})" \
+              --body "Automated sync of \`skills/firecrawl-cli\` from [firecrawl/cli@${SHORT_SHA}](${COMMIT_URL}) into \`skills/firecrawl\`." \
               --base main \
               --head "$BRANCH")
             echo "Created PR: $PR_URL"
-            gh pr merge --repo firecrawl/skills-gh-action-test --auto --merge --delete-branch "$PR_URL"
+            gh pr merge --repo firecrawl/firecrawl-cursor-plugin --auto --merge --delete-branch "$PR_URL"
           fi
