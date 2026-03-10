@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - '.claude-plugin/plugin.json'
+      - 'skills/firecrawl-cli/**'
+      - '.claude-plugin/**'
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -13,64 +15,57 @@ jobs:
       - name: Checkout CLI repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
           path: cli
 
-      - name: Check if version changed
-        id: version
+      - name: Clone target repo
+        env:
+          TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
-          cd cli
-          OLD=$(git show HEAD~1:.claude-plugin/plugin.json 2>/dev/null | jq -r '.version' 2>/dev/null || echo "")
-          NEW=$(jq -r '.version' .claude-plugin/plugin.json)
-          if [ "$OLD" = "$NEW" ]; then
-            echo "Version unchanged ($NEW), skipping sync"
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "Version changed: $OLD → $NEW"
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "version=$NEW" >> $GITHUB_OUTPUT
-          fi
+          git clone https://x-access-token:${TOKEN}@github.com/firecrawl/firecrawl-claude-plugin.git plugin 2>/dev/null || {
+            mkdir plugin && cd plugin && git init
+            git remote add origin https://x-access-token:${TOKEN}@github.com/firecrawl/firecrawl-claude-plugin.git
+          }
 
-      - name: Checkout Plugin repo
-        if: steps.version.outputs.changed == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: firecrawl/firecrawl-claude-plugin
-          token: ${{ secrets.PLUGIN_REPO_PAT }}
-          path: plugin
-
-      - name: Copy files
-        if: steps.version.outputs.changed == 'true'
-        run: |
-          # Sync skill files
-          rm -rf plugin/skills/firecrawl-cli
-          cp -r cli/skills/firecrawl-cli plugin/skills/firecrawl-cli
-
-          # Sync plugin config
-          cp cli/.claude-plugin/plugin.json plugin/.claude-plugin/plugin.json
-          cp cli/.claude-plugin/marketplace.json plugin/.claude-plugin/marketplace.json
-
-      - name: Create PR
-        if: steps.version.outputs.changed == 'true'
+      - name: Sync Claude plugin files
+        env:
+          GH_TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
           cd plugin
-          VERSION="${{ steps.version.outputs.version }}"
-          BRANCH="sync/cli-v${VERSION}"
-          git checkout -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          rm -rf skills/firecrawl-cli
+          mkdir -p skills/firecrawl-cli
+          cp -R ../cli/skills/firecrawl-cli/. skills/firecrawl-cli/
+
+          mkdir -p .claude-plugin
+          cp ../cli/.claude-plugin/plugin.json .claude-plugin/plugin.json
+          cp ../cli/.claude-plugin/marketplace.json .claude-plugin/marketplace.json
+
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to sync"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sync from firecrawl/cli — v${VERSION}"
-          git push origin "$BRANCH"
-          gh pr create \
-            --repo firecrawl/firecrawl-claude-plugin \
-            --title "Sync CLI changes → v${VERSION}" \
-            --body "Automated sync from [firecrawl/cli](https://github.com/firecrawl/cli) main branch (v${VERSION})." \
-            --base main \
-            --head "$BRANCH"
-        env:
-          GH_TOKEN: ${{ secrets.PLUGIN_REPO_PAT }}
+
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+
+          if ! git rev-parse HEAD >/dev/null 2>&1; then
+            git checkout -b main
+            git commit -m "sync Claude plugin from firecrawl/cli (${SHORT_SHA})"
+            git push origin main
+          else
+            BRANCH="sync/claude-plugin-${SHORT_SHA}"
+            git checkout -b "$BRANCH"
+            git commit -m "sync Claude plugin from firecrawl/cli (${SHORT_SHA})"
+            git push origin "$BRANCH"
+            PR_URL=$(gh pr create \
+              --repo firecrawl/firecrawl-claude-plugin \
+              --title "sync Claude plugin (${SHORT_SHA})" \
+              --body "Automated sync of \`skills/firecrawl-cli\` and \`.claude-plugin\` from [firecrawl/cli@${SHORT_SHA}](${COMMIT_URL})." \
+              --base main \
+              --head "$BRANCH")
+            echo "Created PR: $PR_URL"
+            gh pr merge --repo firecrawl/firecrawl-claude-plugin --auto --merge --delete-branch "$PR_URL"
+          fi
