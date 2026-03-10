@@ -1,12 +1,12 @@
 ---
 name: firecrawl
 description: |
-  Official Firecrawl CLI skill for web scraping, search, crawling, and browser automation. Returns clean LLM-optimized markdown.
+  Official Firecrawl CLI skill for web scraping, search, crawling, and browser automation. Returns clean, LLM-optimized markdown.
 
   USE FOR:
   - Web search and research
   - Scraping pages, docs, and articles
-  - Site mapping and bulk content extraction
+  - Site mapping and bulk extraction
   - Browser automation for interactive pages
 
   Must be pre-installed and authenticated. See rules/install.md for setup, rules/security.md for output handling.

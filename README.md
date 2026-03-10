@@ -767,6 +767,135 @@ export FIRECRAWL_NO_TELEMETRY=1
 
 ---
 
+## Experimental: AI Workflows
+
+Launch pre-built AI workflows that combine Firecrawl's web capabilities with your coding agent. One command spins up an interactive session with the right system prompt, tools, and instructions -- like `ollama run` but for web research agents. All workflows spawn parallel subagents to divide the work and finish faster.
+
+```bash
+# Claude Code (available now)
+firecrawl claude competitor-analysis
+firecrawl claude deep-research
+firecrawl claude lead-research
+firecrawl claude seo-audit
+firecrawl claude qa
+
+# Codex and OpenCode -- coming soon
+firecrawl codex competitor-analysis
+firecrawl opencode competitor-analysis
+```
+
+See the full documentation: **[Experimental Workflows ->](src/commands/experimental/README.md)**
+
+---
+
+## Testing Workflows Locally
+
+After building the CLI (`pnpm run build`), every workflow works with all three backends — just swap the command name:
+
+```bash
+# Help
+firecrawl claude --help
+firecrawl codex --help
+firecrawl opencode --help
+```
+
+### QA Testing
+
+```bash
+firecrawl claude qa https://myapp.com
+firecrawl codex qa https://myapp.com
+firecrawl opencode qa https://myapp.com
+```
+
+### Product Demo Walkthrough
+
+```bash
+firecrawl claude demo https://resend.com
+firecrawl codex demo https://neon.tech
+firecrawl opencode demo https://linear.app
+```
+
+### Competitor Analysis
+
+```bash
+firecrawl claude competitor-analysis https://firecrawl.dev
+firecrawl codex competitor-analysis https://crawlee.dev
+firecrawl opencode competitor-analysis https://apify.com
+```
+
+### Deep Research
+
+```bash
+firecrawl claude deep-research "RAG pipeline data ingestion tools"
+firecrawl codex deep-research "web scraping best practices 2025"
+firecrawl opencode deep-research "browser automation frameworks comparison"
+```
+
+### Other Workflows
+
+```bash
+# Lead research
+firecrawl claude lead-research "Vercel"
+firecrawl codex lead-research "Stripe"
+
+# SEO audit
+firecrawl opencode seo-audit https://example.com
+
+# Knowledge base
+firecrawl claude knowledge-base https://docs.langchain.com
+
+# Research papers
+firecrawl codex research-papers "web scraping compliance HIPAA"
+
+# Shopping
+firecrawl claude shop "best mechanical keyboard for developers"
+```
+
+### Natural Language (no workflow name)
+
+```bash
+firecrawl claude "scrape the firecrawl docs and summarize"
+firecrawl codex "find pricing for crawlee vs scrapy"
+firecrawl opencode "compare Firecrawl and Apify features"
+```
+
+Add `-y` to any command to auto-approve tool permissions (maps to `--dangerously-skip-permissions` for Claude, `--full-auto` for Codex).
+
+### Live View
+
+Use `firecrawl browser launch --json` to get a live view URL, then pass it to your agent so you can watch it work in real-time:
+
+```bash
+# Launch a browser session and grab the live view URL
+LIVE_URL=$(firecrawl browser launch --json | jq -r '.liveViewUrl')
+
+# Pass it to Claude Code
+claude --append-system-prompt "A cloud browser session is running. Live view: $LIVE_URL -- use \`firecrawl browser\` commands to interact." \
+  --dangerously-skip-permissions \
+  "QA test https://myapp.com using the cloud browser"
+
+# Pass it to Codex
+codex --full-auto \
+  --config "instructions=A cloud browser session is running. Live view: $LIVE_URL -- use \`firecrawl browser\` commands to interact." \
+  "walk through the signup flow on https://example.com"
+
+# Or use the built-in workflow commands (session is auto-saved for firecrawl browser)
+firecrawl browser launch --json | jq -r '.liveViewUrl'
+firecrawl claude demo https://resend.com
+```
+
+### Prerequisites
+
+Each backend requires its CLI to be installed separately:
+
+| Backend  | Install                                               |
+| -------- | ----------------------------------------------------- |
+| Claude   | `npm install -g @anthropic-ai/claude-code`            |
+| Codex    | `npm install -g @openai/codex`                        |
+| OpenCode | [opencode.ai/docs/cli](https://opencode.ai/docs/cli/) |
+
+---
+
 ## Documentation
 
 For more details, visit the [Firecrawl Documentation](https://docs.firecrawl.dev).

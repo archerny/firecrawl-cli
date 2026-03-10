@@ -14,43 +14,53 @@ jobs:
       - name: Checkout CLI repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
           path: cli
 
-      - name: Checkout target repo
-        uses: actions/checkout@v4
-        with:
-          repository: firecrawl/firecrawl-cursor-plugin
-          token: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
-          path: target
-
-      - name: Copy firecrawl skill
+      - name: Clone target repo
+        env:
+          TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
-          rm -rf target/skills/firecrawl
-          mkdir -p target/skills/firecrawl
-          cp -R cli/skills/firecrawl-cli/. target/skills/firecrawl/
+          git clone https://x-access-token:${TOKEN}@github.com/firecrawl/firecrawl-cursor-plugin.git target 2>/dev/null || {
+            mkdir target && cd target && git init
+            git remote add origin https://x-access-token:${TOKEN}@github.com/firecrawl/firecrawl-cursor-plugin.git
+          }
 
-      - name: Create and merge PR
+      - name: Sync firecrawl skill
         env:
           GH_TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
           cd target
-          BRANCH="sync/cursor-skill-${{ github.sha }}"
-          git checkout -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          rm -rf skills/firecrawl
+          mkdir -p skills/firecrawl
+          cp -R ../cli/skills/firecrawl-cli/. skills/firecrawl/
+
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to sync"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sync firecrawl skill from firecrawl/cli"
-          git push origin "$BRANCH"
-          PR_URL=$(gh pr create \
-            --repo firecrawl/firecrawl-cursor-plugin \
-            --title "Sync firecrawl skill from firecrawl/cli" \
-            --body "Automated sync of \`skills/firecrawl-cli\` from firecrawl/cli into \`skills/firecrawl\`." \
-            --base main \
-            --head "$BRANCH")
-          echo "Created PR: $PR_URL"
-          gh pr merge --repo firecrawl/firecrawl-cursor-plugin --auto --merge --delete-branch "$PR_URL"
+
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+
+          if ! git rev-parse HEAD >/dev/null 2>&1; then
+            git checkout -b main
+            git commit -m "sync firecrawl skill from firecrawl/cli (${SHORT_SHA})"
+            git push origin main
+          else
+            BRANCH="sync/cursor-skill-${SHORT_SHA}"
+            git checkout -b "$BRANCH"
+            git commit -m "sync firecrawl skill from firecrawl/cli (${SHORT_SHA})"
+            git push origin "$BRANCH"
+            PR_URL=$(gh pr create \
+              --repo firecrawl/firecrawl-cursor-plugin \
+              --title "sync firecrawl skill (${SHORT_SHA})" \
+              --body "Automated sync of \`skills/firecrawl-cli\` from [firecrawl/cli@${SHORT_SHA}](${COMMIT_URL}) into \`skills/firecrawl\`." \
+              --base main \
+              --head "$BRANCH")
+            echo "Created PR: $PR_URL"
+            gh pr merge --repo firecrawl/firecrawl-cursor-plugin --auto --merge --delete-branch "$PR_URL"
+          fi
