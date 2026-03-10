@@ -1113,9 +1113,15 @@ program
     '[template]',
     'Template to scaffold (e.g. browser-nextjs, scrape-express)'
   )
-  .option('--all', 'Install skills to all detected agents (implies --yes)')
-  .option('-y, --yes', 'Skip confirmation prompts for skills installation')
-  .option('-g, --global', 'Install skills globally (user-level)')
+  .option(
+    '--all',
+    'Explicitly install skills to all detected agents (default unless --agent is used)'
+  )
+  .option(
+    '-y, --yes',
+    'Run init non-interactively; skills still install globally across all detected agents unless --agent is used'
+  )
+  .option('-g, --global', 'Install skills globally (user-level, default)')
   .option('-a, --agent <agent>', 'Install skills to a specific agent')
   .option(
     '-k, --api-key <key>',
@@ -1232,6 +1238,16 @@ async function main() {
     // Authenticated - show banner and help
     printBanner();
     program.outputHelp();
+    return;
+  }
+
+  // Shorthand: `firecrawl -y` → `firecrawl init --all --browser`
+  if (
+    args.length >= 1 &&
+    (args[0] === '-y' || args[0] === '--yes') &&
+    args.length <= 1
+  ) {
+    await handleInitCommand({ yes: true, all: true, browser: true });
     return;
   }
 
