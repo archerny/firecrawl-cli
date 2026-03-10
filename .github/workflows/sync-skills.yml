@@ -1,10 +1,10 @@
-name: Sync Skills to skills-gh-action-test
+name: Sync Firecrawl Skill to Cursor Plugin
 
 on:
   push:
     branches: [main]
     paths:
-      - 'skills/**'
+      - 'skills/firecrawl-cli/**'
   workflow_dispatch:
 
 jobs:
@@ -20,21 +20,22 @@ jobs:
       - name: Checkout target repo
         uses: actions/checkout@v4
         with:
-          repository: firecrawl/skills-gh-action-test
+          repository: firecrawl/firecrawl-cursor-plugin
           token: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
           path: target
 
-      - name: Copy skills folder
+      - name: Copy firecrawl skill
         run: |
-          rm -rf target/skills
-          cp -r cli/skills target/skills
+          rm -rf target/skills/firecrawl
+          mkdir -p target/skills/firecrawl
+          cp -R cli/skills/firecrawl-cli/. target/skills/firecrawl/
 
       - name: Create and merge PR
         env:
           GH_TOKEN: ${{ secrets.FIRECRAWL_SKILLS_SYNC }}
         run: |
           cd target
-          BRANCH="sync/skills-${{ github.sha }}"
+          BRANCH="sync/cursor-skill-${{ github.sha }}"
           git checkout -b "$BRANCH"
           git add -A
           if git diff --cached --quiet; then
@@ -43,13 +44,13 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sync skills from firecrawl/cli"
+          git commit -m "Sync firecrawl skill from firecrawl/cli"
           git push origin "$BRANCH"
           PR_URL=$(gh pr create \
-            --repo firecrawl/skills-gh-action-test \
-            --title "Sync skills from firecrawl/cli" \
-            --body "Automated sync from firecrawl/cli main branch." \
+            --repo firecrawl/firecrawl-cursor-plugin \
+            --title "Sync firecrawl skill from firecrawl/cli" \
+            --body "Automated sync of \`skills/firecrawl-cli\` from firecrawl/cli into \`skills/firecrawl\`." \
             --base main \
             --head "$BRANCH")
           echo "Created PR: $PR_URL"
-          gh pr merge --repo firecrawl/skills-gh-action-test --auto --merge --delete-branch "$PR_URL"
+          gh pr merge --repo firecrawl/firecrawl-cursor-plugin --auto --merge --delete-branch "$PR_URL"
