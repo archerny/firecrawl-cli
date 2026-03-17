@@ -139,12 +139,16 @@ export async function getStatus(): Promise<StatusResult> {
     const apiKey = config.apiKey;
     validateConfig(apiKey);
 
-    const apiUrl = config.apiUrl || 'https://api.firecrawl.dev';
+    const apiUrl = config.apiUrl;
+
+    if (!apiKey || !apiUrl) {
+      return result;
+    }
 
     // Fetch both endpoints in parallel
     const [queueStatus, creditUsage] = await Promise.all([
-      fetchQueueStatus(apiKey!, apiUrl),
-      fetchCreditUsage(apiKey!, apiUrl),
+      fetchQueueStatus(apiKey, apiUrl),
+      fetchCreditUsage(apiKey, apiUrl),
     ]);
 
     if (queueStatus.success && queueStatus.maxConcurrency !== undefined) {

@@ -52,7 +52,7 @@ export async function viewConfig(): Promise<void> {
 
     console.log('Status: ✓ Authenticated\n');
     console.log(`API Key:  ${maskedKey}`);
-    console.log(`API URL:  ${config.apiUrl || 'https://api.firecrawl.dev'}`);
+    console.log(`API URL:  ${config.apiUrl || 'Not set'}`);
     console.log(`Config:   ${getConfigDirectoryPath()}`);
     console.log('\nCommands:');
     console.log('  firecrawl logout       Clear credentials');

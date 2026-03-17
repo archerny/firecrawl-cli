@@ -41,16 +41,18 @@ describe('Authentication Utilities', () => {
       expect(isAuthenticated()).toBe(true);
     });
 
-    it('should return true when API key is set via environment variable', () => {
+    it('should return true when API key and URL are set via environment variables', () => {
       process.env.FIRECRAWL_API_KEY = 'fc-env-api-key';
+      process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
       initializeConfig({});
 
       expect(isAuthenticated()).toBe(true);
     });
 
-    it('should return true when API key is in stored credentials', () => {
+    it('should return true when API key and URL are in stored credentials', () => {
       vi.mocked(credentials.loadCredentials).mockReturnValue({
         apiKey: 'fc-stored-api-key',
+        apiUrl: 'https://api.firecrawl.dev',
       });
       initializeConfig({});
 
@@ -75,8 +77,10 @@ describe('Authentication Utilities', () => {
   describe('Authentication priority', () => {
     it('should prioritize provided API key over env var', () => {
       process.env.FIRECRAWL_API_KEY = 'fc-env-key';
+      process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
       initializeConfig({
         apiKey: 'fc-provided-key',
+        apiUrl: 'https://custom.firecrawl.dev',
       });
 
       expect(isAuthenticated()).toBe(true);
@@ -84,8 +88,10 @@ describe('Authentication Utilities', () => {
 
     it('should prioritize env var over stored credentials', () => {
       process.env.FIRECRAWL_API_KEY = 'fc-env-key';
+      process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
       vi.mocked(credentials.loadCredentials).mockReturnValue({
         apiKey: 'fc-stored-key',
+        apiUrl: 'https://stored.firecrawl.dev',
       });
       initializeConfig({});
 
@@ -95,6 +101,7 @@ describe('Authentication Utilities', () => {
     it('should fall back to stored credentials when no other source', () => {
       vi.mocked(credentials.loadCredentials).mockReturnValue({
         apiKey: 'fc-stored-key',
+        apiUrl: 'https://stored.firecrawl.dev',
       });
       initializeConfig({});
 

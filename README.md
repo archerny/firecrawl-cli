@@ -31,17 +31,18 @@ firecrawl https://example.com
 
 ## Authentication
 
-On first run, you'll be prompted to authenticate:
+On first run, you'll be prompted to configure:
 
 ```
   🔥 firecrawl cli
   Turn websites into LLM-ready data
 
-Welcome! To get started, authenticate with your Firecrawl account.
+Welcome! To get started, configure your Firecrawl credentials.
 
-Tip: You can also set FIRECRAWL_API_KEY environment variable
+Tip: You can also set FIRECRAWL_API_URL and FIRECRAWL_API_KEY environment variables
 
-Enter your Firecrawl API key:
+Enter your API URL:
+Enter your API key:
 ```
 
 ### Authentication Methods
@@ -50,33 +51,30 @@ Enter your Firecrawl API key:
 # Interactive (prompts automatically when needed)
 firecrawl
 
-# Direct API key
-firecrawl login --api-key fc-your-api-key
+# Direct API key and URL
+firecrawl login --api-url https://api.firecrawl.dev --api-key your-api-key
 
-# Environment variable
-export FIRECRAWL_API_KEY=fc-your-api-key
+# Environment variables
+export FIRECRAWL_API_URL=https://api.firecrawl.dev
+export FIRECRAWL_API_KEY=your-api-key
 
-# Per-command API key
-firecrawl scrape https://example.com --api-key fc-your-api-key
+# Per-command overrides
+firecrawl scrape https://example.com --api-url https://api.firecrawl.dev --api-key your-api-key
 ```
 
 ### Self-hosted / Local Development
 
-For self-hosted Firecrawl instances or local development, use the `--api-url` option:
+For self-hosted Firecrawl instances or local development:
 
 ```bash
-# Use a local Firecrawl instance (no API key required)
-firecrawl --api-url http://localhost:3002 scrape https://example.com
+# Use a local Firecrawl instance
+firecrawl login --api-url http://localhost:3002 --api-key your-local-key
 
-# Or set via environment variable
+# Or set via environment variables
 export FIRECRAWL_API_URL=http://localhost:3002
+export FIRECRAWL_API_KEY=your-local-key
 firecrawl scrape https://example.com
-
-# Self-hosted with API key
-firecrawl --api-url https://firecrawl.mycompany.com --api-key fc-xxx scrape https://example.com
 ```
-
-When using a custom API URL (anything other than `https://api.firecrawl.dev`), authentication is automatically skipped, allowing you to use local instances without an API key.
 
 ---
 

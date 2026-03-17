@@ -48,8 +48,12 @@ export async function executeCreditUsage(
     const apiKey = options.apiKey || config.apiKey;
     validateConfig(apiKey);
 
-    const apiUrl =
-      options.apiUrl || config.apiUrl || 'https://api.firecrawl.dev';
+    const apiUrl = options.apiUrl || config.apiUrl;
+    if (!apiUrl) {
+      throw new Error(
+        'API URL is required. Use --api-url flag or run "firecrawl login" to configure.'
+      );
+    }
 
     // Make the API call to /v2/team/credit-usage
     const url = `${apiUrl.replace(/\/$/, '')}/v2/team/credit-usage`;

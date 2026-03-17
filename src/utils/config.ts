@@ -72,30 +72,35 @@ export function getApiKey(providedKey?: string): string | undefined {
   return storedCredentials?.apiKey;
 }
 
-export const DEFAULT_API_URL = 'https://api.firecrawl.dev';
-
 /**
- * Check if using a custom (non-cloud) API URL
+ * Get API URL from global config or provided value
+ * Priority: provided url > global config > env var > stored credentials
  */
-export function isCustomApiUrl(apiUrl?: string): boolean {
-  const url = apiUrl || globalConfig.apiUrl;
-  return !!url && url !== DEFAULT_API_URL;
+export function getApiUrl(providedUrl?: string): string | undefined {
+  if (providedUrl) return providedUrl;
+  if (globalConfig.apiUrl) return globalConfig.apiUrl;
+  if (process.env.FIRECRAWL_API_URL) return process.env.FIRECRAWL_API_URL;
+
+  const storedCredentials = loadCredentials();
+  return storedCredentials?.apiUrl;
 }
 
 /**
  * Validate that required configuration is present
- * API key is only required for the cloud API, not for local/custom APIs
+ * Both API key and API URL are required
  */
 export function validateConfig(apiKey?: string): void {
-  // Skip API key validation for custom API URLs (e.g., local development)
-  if (isCustomApiUrl()) {
-    return;
-  }
-
   const key = getApiKey(apiKey);
   if (!key) {
     throw new Error(
-      'API key is required. Set FIRECRAWL_API_KEY environment variable, use --api-key flag, or run "firecrawl config" to set the API key.'
+      'API key is required. Set FIRECRAWL_API_KEY environment variable, use --api-key flag, or run "firecrawl login" to configure.'
+    );
+  }
+
+  const url = getApiUrl();
+  if (!url) {
+    throw new Error(
+      'API URL is required. Set FIRECRAWL_API_URL environment variable, use --api-url flag, or run "firecrawl login" to configure.'
     );
   }
 }

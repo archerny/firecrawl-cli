@@ -78,7 +78,6 @@ program
   .hook('preAction', async (thisCommand, actionCommand) => {
     // Update global config if API key or URL is provided via global option
     const globalOptions = thisCommand.opts();
-    const commandOptions = actionCommand.opts();
     if (globalOptions.apiKey) {
       updateConfig({ apiKey: globalOptions.apiKey });
     }
@@ -89,14 +88,8 @@ program
     // Check if this command requires authentication
     const commandName = actionCommand.name();
     if (AUTH_REQUIRED_COMMANDS.includes(commandName)) {
-      // Skip auth for custom API URLs (e.g., local development)
-      // Check both global and command-level options
-      const { isCustomApiUrl } = await import('./utils/config');
-      const effectiveApiUrl = commandOptions.apiUrl || globalOptions.apiUrl;
-      if (!isCustomApiUrl(effectiveApiUrl)) {
-        // Ensure user is authenticated (prompts for login if needed)
-        await ensureAuthenticated();
-      }
+      // Ensure user is authenticated (prompts for login if needed)
+      await ensureAuthenticated();
     }
   });
 
@@ -1045,7 +1038,7 @@ program
     '-k, --api-key <key>',
     'Provide API key directly (skips interactive flow)'
   )
-  .option('--api-url <url>', 'API URL (default: https://api.firecrawl.dev)')
+  .option('--api-url <url>', 'API URL')
   .action(async (options) => {
     await configure({
       apiKey: options.apiKey,
@@ -1067,7 +1060,7 @@ program
     '-k, --api-key <key>',
     'Provide API key directly (skips interactive flow)'
   )
-  .option('--api-url <url>', 'API URL (default: https://api.firecrawl.dev)')
+  .option('--api-url <url>', 'API URL')
   .action(async (options) => {
     const globalOptions = program.opts();
     await handleLoginCommand({

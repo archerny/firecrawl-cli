@@ -9,7 +9,6 @@ import {
   resetConfig,
   updateConfig,
   validateConfig,
-  isCustomApiUrl,
 } from '../../utils/config';
 import { getClient, resetClient } from '../../utils/client';
 import * as credentials from '../../utils/credentials';
@@ -146,7 +145,10 @@ describe('Config Fallback Priority', () => {
     });
 
     it('should handle undefined options gracefully', () => {
-      initializeConfig({ apiKey: 'global-api-key' });
+      initializeConfig({
+        apiKey: 'global-api-key',
+        apiUrl: 'https://global-url.com',
+      });
 
       getClient({ apiKey: undefined });
 
@@ -161,10 +163,12 @@ describe('Config Fallback Priority', () => {
       // Set up stored credentials
       vi.mocked(credentials.loadCredentials).mockReturnValue({
         apiKey: 'stored-api-key',
+        apiUrl: 'https://stored-url.com',
       });
 
       // Set up env vars
       process.env.FIRECRAWL_API_KEY = 'env-api-key';
+      process.env.FIRECRAWL_API_URL = 'https://env-url.com';
 
       // Initialize with env vars (should use env > stored)
       initializeConfig({});
@@ -182,12 +186,14 @@ describe('Config Fallback Priority', () => {
       // After clearing env, should fall back to stored
       resetConfig();
       delete process.env.FIRECRAWL_API_KEY;
+      delete process.env.FIRECRAWL_API_URL;
       initializeConfig({});
       expect(getConfig().apiKey).toBe('stored-api-key');
     });
 
     it('should update global config when getClient is called with options', () => {
       process.env.FIRECRAWL_API_KEY = 'env-api-key';
+      process.env.FIRECRAWL_API_URL = 'https://env-url.com';
       initializeConfig({});
 
       // Initially should use env var
@@ -234,44 +240,29 @@ describe('Config Fallback Priority', () => {
     });
   });
 
-  describe('isCustomApiUrl', () => {
-    it('should return false for default cloud API URL', () => {
-      initializeConfig({ apiUrl: 'https://api.firecrawl.dev' });
-      expect(isCustomApiUrl()).toBe(false);
-    });
-
-    it('should return true for custom API URLs', () => {
-      initializeConfig({ apiUrl: 'http://localhost:3002' });
-      expect(isCustomApiUrl()).toBe(true);
-    });
-
-    it('should return false when no apiUrl is set', () => {
-      initializeConfig({});
-      expect(isCustomApiUrl()).toBe(false);
-    });
-
-    it('should accept apiUrl parameter override', () => {
-      initializeConfig({ apiUrl: 'https://api.firecrawl.dev' });
-      expect(isCustomApiUrl('http://localhost:3002')).toBe(true);
-    });
-  });
-
-  describe('validateConfig with custom API URLs', () => {
-    it('should not require API key for custom API URLs', () => {
-      initializeConfig({ apiUrl: 'http://localhost:3002' });
-      // Should not throw
-      expect(() => validateConfig()).not.toThrow();
-    });
-
-    it('should require API key for cloud API URL', () => {
-      initializeConfig({ apiUrl: 'https://api.firecrawl.dev' });
+  describe('validateConfig', () => {
+    it('should require API key', () => {
+      initializeConfig({ apiUrl: 'https://example.com' });
       expect(() => validateConfig()).toThrow('API key is required');
     });
 
-    it('should not throw when API key is provided for cloud API', () => {
+    it('should require API URL', () => {
+      initializeConfig({ apiKey: 'test-key' });
+      expect(() => validateConfig()).toThrow('API URL is required');
+    });
+
+    it('should not throw when both API key and URL are provided', () => {
       initializeConfig({
-        apiUrl: 'https://api.firecrawl.dev',
-        apiKey: 'fc-test-key',
+        apiUrl: 'https://example.com',
+        apiKey: 'test-key',
+      });
+      expect(() => validateConfig()).not.toThrow();
+    });
+
+    it('should accept any API URL (no default URL concept)', () => {
+      initializeConfig({
+        apiUrl: 'http://localhost:3002',
+        apiKey: 'test-key',
       });
       expect(() => validateConfig()).not.toThrow();
     });

@@ -9,7 +9,7 @@ import {
   saveCredentials,
   getConfigDirectoryPath,
 } from './credentials';
-import { updateConfig, getApiKey, DEFAULT_API_URL } from './config';
+import { updateConfig, getApiKey, getApiUrl } from './config';
 
 /**
  * Prompt for input
@@ -29,52 +29,46 @@ function promptInput(question: string): Promise<string> {
 }
 
 /**
- * Perform manual API key login
- * For custom API URLs (local development), API key is optional
+ * Perform manual login - prompts for API URL and API key
+ * If apiUrl is already provided (e.g. via --api-url), skips the URL prompt
  */
 async function manualLogin(
-  apiUrl: string = DEFAULT_API_URL
+  apiUrl?: string
 ): Promise<{ apiKey: string; apiUrl: string }> {
-  const isCustomUrl = apiUrl !== DEFAULT_API_URL;
-
   console.log('');
 
-  if (isCustomUrl) {
-    const apiKey = await promptInput(
-      'Enter your API key (press Enter to skip): '
-    );
-    return {
-      apiKey: apiKey.trim(),
-      apiUrl,
-    };
+  // Prompt for API URL if not provided
+  let effectiveApiUrl = apiUrl;
+  if (!effectiveApiUrl) {
+    effectiveApiUrl = await promptInput('Enter your API URL: ');
+    if (!effectiveApiUrl || effectiveApiUrl.trim().length === 0) {
+      throw new Error('API URL cannot be empty');
+    }
+    effectiveApiUrl = effectiveApiUrl.trim().replace(/\/$/, '');
   }
 
-  const apiKey = await promptInput('Enter your Firecrawl API key: ');
+  // Prompt for API key
+  const apiKey = await promptInput('Enter your API key: ');
 
   if (!apiKey || apiKey.trim().length === 0) {
     throw new Error('API key cannot be empty');
   }
 
-  if (!apiKey.startsWith('fc-')) {
-    throw new Error('Invalid API key format. API keys should start with "fc-"');
-  }
-
   return {
     apiKey: apiKey.trim(),
-    apiUrl,
+    apiUrl: effectiveApiUrl,
   };
 }
 
 /**
- * Use environment variable for authentication
+ * Use environment variables for authentication
+ * Both FIRECRAWL_API_KEY and FIRECRAWL_API_URL must be set
  */
 function envVarLogin(): { apiKey: string; apiUrl: string } | null {
   const apiKey = process.env.FIRECRAWL_API_KEY;
-  if (apiKey && apiKey.length > 0) {
-    return {
-      apiKey,
-      apiUrl: process.env.FIRECRAWL_API_URL || DEFAULT_API_URL,
-    };
+  const apiUrl = process.env.FIRECRAWL_API_URL;
+  if (apiKey && apiKey.length > 0 && apiUrl && apiUrl.length > 0) {
+    return { apiKey, apiUrl };
   }
   return null;
 }
@@ -102,39 +96,39 @@ function printBanner(): void {
 }
 
 /**
- * Interactive login flow - prompts user to enter API key
+ * Interactive login flow - prompts user to enter API URL and API key
  */
 async function interactiveLogin(
   apiUrl?: string
 ): Promise<{ apiKey: string; apiUrl: string }> {
-  const effectiveApiUrl = apiUrl || DEFAULT_API_URL;
-
-  // First check if env var is set
+  // First check if env vars are set (both key and url)
   const envResult = envVarLogin();
   if (envResult) {
     printBanner();
-    console.log('✓ Using FIRECRAWL_API_KEY from environment variable\n');
+    console.log(
+      '✓ Using FIRECRAWL_API_KEY and FIRECRAWL_API_URL from environment variables\n'
+    );
     return envResult;
   }
 
   printBanner();
 
   console.log(
-    'Welcome! To get started, authenticate with your Firecrawl account.\n'
+    'Welcome! To get started, configure your Firecrawl credentials.\n'
   );
   printEnvHint();
 
-  return manualLogin(effectiveApiUrl);
+  return manualLogin(apiUrl);
 }
 
 /**
- * Print hint about environment variable
+ * Print hint about environment variables
  */
 function printEnvHint(): void {
   const dim = '\x1b[2m';
   const reset = '\x1b[0m';
   console.log(
-    `${dim}Tip: You can also set FIRECRAWL_API_KEY environment variable${reset}\n`
+    `${dim}Tip: You can also set FIRECRAWL_API_URL and FIRECRAWL_API_KEY environment variables${reset}\n`
   );
 }
 
@@ -144,11 +138,12 @@ function printEnvHint(): void {
 export { printBanner };
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated (both API key and API URL are set)
  */
 export function isAuthenticated(): boolean {
   const apiKey = getApiKey();
-  return !!apiKey && apiKey.length > 0;
+  const apiUrl = getApiUrl();
+  return !!apiKey && apiKey.length > 0 && !!apiUrl && apiUrl.length > 0;
 }
 
 /**
