@@ -753,23 +753,6 @@ Each format is saved as its own file per page:
 
 ---
 
-## Telemetry
-
-The CLI collects anonymous usage data during authentication to help improve the product:
-
-- CLI version, OS, and Node.js version
-- Detect development tools (e.g., Cursor, VS Code, Claude Code)
-
-**No command data, URLs, or file contents are collected via the CLI.**
-
-To disable telemetry, set the environment variable:
-
-```bash
-export FIRECRAWL_NO_TELEMETRY=1
-```
-
----
-
 ## Experimental: AI Workflows
 
 Launch pre-built AI workflows that combine Firecrawl's web capabilities with your coding agent. One command spins up an interactive session with the right system prompt, tools, and instructions -- like `ollama run` but for web research agents. All workflows spawn parallel subagents to divide the work and finish faster.
