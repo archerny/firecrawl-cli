@@ -7,16 +7,11 @@
 import { execSync } from 'child_process';
 import { isAuthenticated, browserLogin, interactiveLogin } from '../utils/auth';
 import { saveCredentials } from '../utils/credentials';
-import { updateConfig, getApiKey } from '../utils/config';
-import { buildSkillsInstallArgs } from './skills-install';
+import { updateConfig } from '../utils/config';
 
 export interface InitOptions {
-  global?: boolean;
-  agent?: string;
-  all?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
-  skipSkills?: boolean;
   skipAuth?: boolean;
   apiKey?: string;
   browser?: boolean;
@@ -175,108 +170,6 @@ async function stepAuth(options: InitOptions): Promise<boolean> {
     );
     return true;
   }
-}
-
-async function stepIntegrations(options: InitOptions): Promise<void> {
-  const { checkbox, confirm } = await import('@inquirer/prompts');
-
-  const wantIntegrations = await confirm({
-    message: 'Set up integrations (skills, MCP, env)?',
-    default: true,
-  });
-
-  if (!wantIntegrations) return;
-
-  const integrations = await checkbox<string>({
-    message: 'Which integrations?',
-    choices: [
-      {
-        name: 'Skills — install firecrawl skill for AI coding agents',
-        value: 'skills',
-        checked: true,
-      },
-      {
-        name: 'MCP — install firecrawl MCP server for editors (Cursor, Claude Code, VS Code)',
-        value: 'mcp',
-      },
-      {
-        name: 'Env — pull FIRECRAWL_API_KEY into local .env file',
-        value: 'env',
-      },
-    ],
-  });
-
-  if (integrations.length === 0) {
-    console.log(`  ${dim}No integrations selected.${reset}\n`);
-    return;
-  }
-
-  for (const integration of integrations) {
-    switch (integration) {
-      case 'skills': {
-        console.log(`\n  Setting up skills...`);
-        const args = buildSkillsInstallArgs({
-          agent: options.agent,
-          yes: options.yes || options.all,
-          global: true,
-          includeNpxYes: true,
-        });
-        try {
-          execSync(args.join(' '), { stdio: 'inherit' });
-          console.log(`  ${green}✓${reset} Skills installed`);
-        } catch {
-          console.error(
-            '  Failed to install skills. Run "firecrawl setup skills" later.'
-          );
-        }
-        break;
-      }
-      case 'mcp': {
-        console.log(`\n  Setting up MCP server...`);
-        const apiKey = getApiKey();
-        if (!apiKey) {
-          console.log(
-            `  ${dim}Skipped — no API key found. Run "firecrawl login" first, then "firecrawl setup mcp".${reset}`
-          );
-          break;
-        }
-        const args = [
-          'npx',
-          '-y',
-          'add-mcp',
-          '"npx -y firecrawl-mcp"',
-          '--name',
-          'firecrawl',
-        ];
-        if (options.global) args.push('--global');
-        if (options.agent) args.push('--agent', options.agent);
-        try {
-          execSync(args.join(' '), {
-            stdio: 'inherit',
-            env: { ...process.env, FIRECRAWL_API_KEY: apiKey },
-          });
-          console.log(`  ${green}✓${reset} MCP server installed`);
-        } catch {
-          console.error(
-            '  Failed to install MCP. Run "firecrawl setup mcp" later.'
-          );
-        }
-        break;
-      }
-      case 'env': {
-        console.log(`\n  Pulling API key into .env...`);
-        try {
-          const { handleEnvPullCommand } = await import('./env');
-          await handleEnvPullCommand({});
-          console.log(`  ${green}✓${reset} .env updated`);
-        } catch {
-          console.error('  Failed to update .env. Run "firecrawl env" later.');
-        }
-        break;
-      }
-    }
-  }
-  console.log('');
 }
 
 function copyTemplateFiles(
@@ -533,12 +426,7 @@ export async function handleInitCommand(
     await stepAuth(options);
   }
 
-  // Step 3: Integrations (skills, MCP, env)
-  if (!options.skipSkills) {
-    await stepIntegrations(options);
-  }
-
-  // Step 4: Template
+  // Step 3: Template
   await stepTemplate();
 
   console.log(
@@ -550,7 +438,6 @@ async function runNonInteractive(options: InitOptions): Promise<void> {
   const steps: string[] = [];
   if (!options.skipInstall) steps.push('install');
   if (!options.skipAuth) steps.push('auth');
-  if (!options.skipSkills) steps.push('skills');
   const total = steps.length;
   let current = 0;
 
@@ -609,27 +496,6 @@ async function runNonInteractive(options: InitOptions): Promise<void> {
         );
         console.log('You can authenticate later with: firecrawl login\n');
       }
-    }
-  }
-
-  if (!options.skipSkills) {
-    console.log(
-      `${stepLabel()} Installing firecrawl skill for AI coding agents...`
-    );
-    const args = buildSkillsInstallArgs({
-      agent: options.agent,
-      yes: true,
-      global: true,
-      includeNpxYes: true,
-    });
-    try {
-      execSync(args.join(' '), { stdio: 'inherit' });
-      console.log(`${green}✓${reset} Skills installed\n`);
-    } catch {
-      console.error(
-        '\nFailed to install skills. You can retry with: firecrawl setup skills'
-      );
-      process.exit(1);
     }
   }
 

@@ -55,7 +55,7 @@ Quick reference:
 
 export const QA_TOOLS_BLOCK = `## Your Tools -- READ THIS FIRST
 
-Use ONLY \`firecrawl\` for ALL web operations. It is already installed and authenticated. Run firecrawl commands via Bash. Do not use any other tools, skills, plugins, or built-in web features for web access -- only \`firecrawl\`. If the CLI has issues, you may fall back to Firecrawl MCP tools if available.
+Use ONLY \`firecrawl\` for ALL web operations. It is already installed and authenticated. Run firecrawl commands via Bash. Do not use any other tools, plugins, or built-in web features for web access -- only \`firecrawl\`.
 
 **First step: run \`firecrawl --help\` and \`firecrawl browser --help\` to see all commands.** Tell each subagent to do the same.
 
@@ -89,7 +89,7 @@ Quick reference:
 export const SUBAGENT_INSTRUCTIONS = `**IMPORTANT:** When spawning agents with the Agent tool:
 - Use \`subagent_type: "general-purpose"\` for each agent
 - Give each agent a clear, specific mandate in the prompt
-- Tell each agent: "Use ONLY firecrawl for all web access via Bash. Do not use any other tools, skills, or plugins for web access. If the CLI has issues, fall back to Firecrawl MCP tools. Run \`firecrawl --help\` first."
+- Tell each agent: "Use ONLY firecrawl for all web access via Bash. Do not use any other tools or plugins for web access. Run \`firecrawl --help\` first."
 - Launch ALL agents in a SINGLE message (parallel, not sequential)
 - Each agent should return structured findings with source URLs`;
 

@@ -218,7 +218,7 @@ Then run \`firecrawl <command> --help\` for whichever specific commands you need
 
 ## Available Tools
 
-Use ONLY \`firecrawl\` for ALL web operations. It is already installed and authenticated. Run firecrawl commands via Bash. Do not use any other tools, skills, plugins, or built-in web features for web access -- only \`firecrawl\`. If the CLI has issues, you may fall back to Firecrawl MCP tools if available.
+Use ONLY \`firecrawl\` for ALL web operations. It is already installed and authenticated. Run firecrawl commands via Bash. Do not use any other tools, plugins, or built-in web features for web access -- only \`firecrawl\`.
 
 Quick reference:
 - \`firecrawl search "<query>"\` -- Search the web

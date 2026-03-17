@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - 'skills/firecrawl-cli/**'
       - '.claude-plugin/**'
   workflow_dispatch:
 
@@ -34,10 +33,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          rm -rf skills/firecrawl-cli
-          mkdir -p skills/firecrawl-cli
-          cp -R ../cli/skills/firecrawl-cli/. skills/firecrawl-cli/
-
           mkdir -p .claude-plugin
           cp ../cli/.claude-plugin/plugin.json .claude-plugin/plugin.json
           cp ../cli/.claude-plugin/marketplace.json .claude-plugin/marketplace.json
@@ -63,7 +58,7 @@ jobs:
             PR_URL=$(gh pr create \
               --repo firecrawl/firecrawl-claude-plugin \
               --title "sync Claude plugin (${SHORT_SHA})" \
-              --body "Automated sync of \`skills/firecrawl-cli\` and \`.claude-plugin\` from [firecrawl/cli@${SHORT_SHA}](${COMMIT_URL})." \
+              --body "Automated sync of \`.claude-plugin\` from [firecrawl/cli@${SHORT_SHA}](${COMMIT_URL})." \
               --base main \
               --head "$BRANCH")
             echo "Created PR: $PR_URL"

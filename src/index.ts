@@ -33,9 +33,6 @@ import {
   scaffoldTemplate,
   findTemplate,
 } from './commands/init';
-import { handleSetupCommand } from './commands/setup';
-import type { SetupSubcommand } from './commands/setup';
-import { handleEnvPullCommand } from './commands/env';
 import { handleStatusCommand } from './commands/status';
 import { isUrl, normalizeUrl } from './utils/url';
 import { parseScrapeOptions } from './utils/options';
@@ -1118,15 +1115,9 @@ program
     'Template to scaffold (e.g. browser-nextjs, scrape-express)'
   )
   .option(
-    '--all',
-    'Explicitly install skills to all detected agents (default unless --agent is used)'
-  )
-  .option(
     '-y, --yes',
-    'Run init non-interactively; skills still install globally across all detected agents unless --agent is used'
+    'Run init non-interactively'
   )
-  .option('-g, --global', 'Install skills globally (user-level, default)')
-  .option('-a, --agent <agent>', 'Install skills to a specific agent')
   .option(
     '-k, --api-key <key>',
     'Authenticate with this API key (skips interactive login)'
@@ -1137,41 +1128,14 @@ program
   )
   .option('--skip-install', 'Skip global CLI installation')
   .option('--skip-auth', 'Skip authentication')
-  .option('--skip-skills', 'Skip skills installation')
   .action(async (template, options) => {
     await handleInitCommand({
       template,
-      global: options.global,
-      agent: options.agent,
-      all: options.all,
       yes: options.yes,
       apiKey: options.apiKey,
       browser: options.browser,
       skipInstall: options.skipInstall,
       skipAuth: options.skipAuth,
-      skipSkills: options.skipSkills,
-    });
-  });
-
-program
-  .command('setup')
-  .description('Set up individual firecrawl integrations (skills, mcp)')
-  .argument('<subcommand>', 'What to set up: "skills" or "mcp"')
-  .option('-g, --global', 'Install globally (user-level)')
-  .option('-a, --agent <agent>', 'Install to a specific agent')
-  .action(async (subcommand: SetupSubcommand, options) => {
-    await handleSetupCommand(subcommand, options);
-  });
-
-program
-  .command('env')
-  .description('Pull FIRECRAWL_API_KEY into a local .env file')
-  .option('-f, --file <path>', 'Target env file (default: .env)')
-  .option('--overwrite', 'Overwrite existing FIRECRAWL_API_KEY if present')
-  .action(async (options) => {
-    await handleEnvPullCommand({
-      file: options.file,
-      overwrite: options.overwrite,
     });
   });
 
@@ -1245,13 +1209,13 @@ async function main() {
     return;
   }
 
-  // Shorthand: `firecrawl -y` → `firecrawl init --all --browser`
+  // Shorthand: `firecrawl -y` → `firecrawl init -y --browser`
   if (
     args.length >= 1 &&
     (args[0] === '-y' || args[0] === '--yes') &&
     args.length <= 1
   ) {
-    await handleInitCommand({ yes: true, all: true, browser: true });
+    await handleInitCommand({ yes: true, browser: true });
     return;
   }
 
