@@ -4,14 +4,12 @@
  * Usage:  npx -y firecrawl-cli init
  */
 
-import { execSync } from 'child_process';
 import { isAuthenticated, browserLogin, interactiveLogin } from '../utils/auth';
 import { saveCredentials } from '../utils/credentials';
 import { updateConfig } from '../utils/config';
 
 export interface InitOptions {
   yes?: boolean;
-  skipInstall?: boolean;
   skipAuth?: boolean;
   apiKey?: string;
   browser?: boolean;
@@ -87,28 +85,6 @@ export const TEMPLATES: TemplateEntry[] = [
     path: '_external:firecrawl/open-lovable',
   },
 ];
-
-async function stepInstall(): Promise<boolean> {
-  const { confirm } = await import('@inquirer/prompts');
-  const shouldInstall = await confirm({
-    message: 'Install firecrawl-cli globally?',
-    default: true,
-  });
-
-  if (!shouldInstall) return true;
-
-  console.log(`\n  Installing firecrawl-cli globally...`);
-  try {
-    execSync('npm install -g firecrawl-cli', { stdio: 'inherit' });
-    console.log(`  ${green}✓${reset} CLI installed globally\n`);
-    return true;
-  } catch {
-    console.error(
-      '\n  Failed to install globally. You may need sudo or fix npm permissions.'
-    );
-    return false;
-  }
-}
 
 async function stepAuth(options: InitOptions): Promise<boolean> {
   if (isAuthenticated()) {
@@ -407,26 +383,18 @@ export async function handleInitCommand(
   console.log(`  ${orange}🔥 ${bold}firecrawl${reset} ${dim}init${reset}`);
   console.log('');
 
-  // Non-interactive mode (--yes or --all skips all prompts)
-  if (options.yes || options.all) {
+  // Non-interactive mode (--yes skips all prompts)
+  if (options.yes) {
     await runNonInteractive(options);
     return;
   }
 
-  // Step 1: Install
-  if (!options.skipInstall) {
-    const ok = await stepInstall();
-    if (!ok) {
-      console.log(`  ${dim}Continuing with setup...${reset}\n`);
-    }
-  }
-
-  // Step 2: Auth
+  // Step 1: Auth
   if (!options.skipAuth) {
     await stepAuth(options);
   }
 
-  // Step 3: Template
+  // Step 2: Template
   await stepTemplate();
 
   console.log(
@@ -435,49 +403,25 @@ export async function handleInitCommand(
 }
 
 async function runNonInteractive(options: InitOptions): Promise<void> {
-  const steps: string[] = [];
-  if (!options.skipInstall) steps.push('install');
-  if (!options.skipAuth) steps.push('auth');
-  const total = steps.length;
-  let current = 0;
-
-  const stepLabel = () => {
-    current++;
-    return `${bold}[${current}/${total}]${reset}`;
-  };
-
-  if (!options.skipInstall) {
-    console.log(`${stepLabel()} Installing firecrawl-cli globally...`);
-    try {
-      execSync('npm install -g firecrawl-cli', { stdio: 'inherit' });
-      console.log(`${green}✓${reset} CLI installed globally\n`);
-    } catch {
-      console.error(
-        '\nFailed to install firecrawl-cli globally. You may need to run with sudo or fix npm permissions.'
-      );
-      process.exit(1);
-    }
-  }
-
   if (!options.skipAuth) {
     if (isAuthenticated()) {
-      console.log(`${stepLabel()} Authenticating...`);
-      console.log(`${green}✓${reset} Already authenticated\n`);
+      console.log(`  Authenticating...`);
+      console.log(`  ${green}✓${reset} Already authenticated\n`);
     } else if (options.apiKey) {
-      console.log(`${stepLabel()} Authenticating with API key...`);
+      console.log(`  Authenticating with API key...`);
       try {
         saveCredentials({ apiKey: options.apiKey });
         updateConfig({ apiKey: options.apiKey });
-        console.log(`${green}✓${reset} Authenticated\n`);
+        console.log(`  ${green}✓${reset} Authenticated\n`);
       } catch (error) {
         console.error(
-          'Failed to save credentials:',
+          '  Failed to save credentials:',
           error instanceof Error ? error.message : 'Unknown error'
         );
         process.exit(1);
       }
     } else {
-      console.log(`${stepLabel()} Authenticating with Firecrawl...`);
+      console.log(`  Authenticating with Firecrawl...`);
       try {
         let result: { apiKey: string; apiUrl?: string; teamName?: string };
         if (options.browser || !options.apiKey) {
@@ -488,18 +432,18 @@ async function runNonInteractive(options: InitOptions): Promise<void> {
         saveCredentials({ apiKey: result.apiKey, apiUrl: result.apiUrl });
         updateConfig({ apiKey: result.apiKey, apiUrl: result.apiUrl });
         const teamSuffix = result.teamName ? ` (Team: ${result.teamName})` : '';
-        console.log(`${green}✓${reset} Authenticated${teamSuffix}\n`);
+        console.log(`  ${green}✓${reset} Authenticated${teamSuffix}\n`);
       } catch (error) {
         console.error(
-          '\nAuthentication failed:',
+          '\n  Authentication failed:',
           error instanceof Error ? error.message : 'Unknown error'
         );
-        console.log('You can authenticate later with: firecrawl login\n');
+        console.log('  You can authenticate later with: firecrawl login\n');
       }
     }
   }
 
   console.log(
-    `${green}${bold}Setup complete!${reset} Run ${dim}firecrawl --help${reset} to get started.\n`
+    `${green}${bold}  Setup complete!${reset} Run ${dim}firecrawl --help${reset} to get started.\n`
   );
 }

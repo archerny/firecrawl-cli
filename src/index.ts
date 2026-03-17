@@ -1107,17 +1107,12 @@ program
 
 program
   .command('init')
-  .description(
-    'Set up Firecrawl: install CLI, authenticate, add integrations, and scaffold a template'
-  )
+  .description('Set up Firecrawl: authenticate and scaffold a template')
   .argument(
     '[template]',
     'Template to scaffold (e.g. browser-nextjs, scrape-express)'
   )
-  .option(
-    '-y, --yes',
-    'Run init non-interactively'
-  )
+  .option('-y, --yes', 'Run init non-interactively')
   .option(
     '-k, --api-key <key>',
     'Authenticate with this API key (skips interactive login)'
@@ -1126,7 +1121,6 @@ program
     '-b, --browser',
     'Authenticate via browser without prompting (recommended for agents)'
   )
-  .option('--skip-install', 'Skip global CLI installation')
   .option('--skip-auth', 'Skip authentication')
   .action(async (template, options) => {
     await handleInitCommand({
@@ -1134,7 +1128,6 @@ program
       yes: options.yes,
       apiKey: options.apiKey,
       browser: options.browser,
-      skipInstall: options.skipInstall,
       skipAuth: options.skipAuth,
     });
   });

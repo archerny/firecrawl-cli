@@ -12,15 +12,12 @@
     "start": "node dist/index.js",
     "local": "node dist/index.js",
     "clean": "rm -rf dist",
-    "prepublishOnly": "pnpm run build",
     "prepare": "husky",
     "format": "prettier --write \"src/**/*.{ts,json}\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json}\" \"*.{json,md}\"",
     "type-check": "tsc --noEmit",
     "test:watch": "vitest",
-    "test": "vitest run",
-    "publish-beta": "npm publish --tag beta",
-    "publish-prod": "npm publish --access public"
+    "test": "vitest run"
   },
   "lint-staged": {
     "*.{ts,json,md}": [
@@ -37,26 +34,21 @@
     "llm",
     "markdown",
     "search",
-    "web search",
-    "skill"
+    "web search"
   ],
   "author": "Firecrawl",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/firecrawl/cli.git"
+    "url": "git+https://github.com/archerny/firecrawl-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/firecrawl/cli/issues"
+    "url": "https://github.com/archerny/firecrawl-cli/issues"
   },
-  "homepage": "https://docs.firecrawl.dev/cli",
+  "homepage": "https://github.com/archerny/firecrawl-cli",
   "engines": {
     "node": ">=18.0.0"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
     "@types/node": "^20.0.0",
