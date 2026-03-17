@@ -1046,21 +1046,10 @@ program
     'Provide API key directly (skips interactive flow)'
   )
   .option('--api-url <url>', 'API URL (default: https://api.firecrawl.dev)')
-  .option(
-    '--web-url <url>',
-    'Web URL for browser login (default: https://firecrawl.dev)'
-  )
-  .option(
-    '-m, --method <method>',
-    'Login method: "browser" or "manual" (default: interactive prompt)'
-  )
-  .option('-b, --browser', 'Login via browser (shortcut for --method browser)')
   .action(async (options) => {
     await configure({
       apiKey: options.apiKey,
       apiUrl: options.apiUrl,
-      webUrl: options.webUrl,
-      method: options.browser ? 'browser' : options.method,
     });
   });
 
@@ -1079,22 +1068,11 @@ program
     'Provide API key directly (skips interactive flow)'
   )
   .option('--api-url <url>', 'API URL (default: https://api.firecrawl.dev)')
-  .option(
-    '--web-url <url>',
-    'Web URL for browser login (default: https://firecrawl.dev)'
-  )
-  .option(
-    '-m, --method <method>',
-    'Login method: "browser" or "manual" (default: interactive prompt)'
-  )
-  .option('-b, --browser', 'Login via browser (shortcut for --method browser)')
   .action(async (options) => {
     const globalOptions = program.opts();
     await handleLoginCommand({
       apiKey: options.apiKey ?? globalOptions.apiKey,
       apiUrl: options.apiUrl ?? globalOptions.apiUrl,
-      webUrl: options.webUrl,
-      method: options.browser ? 'browser' : options.method,
     });
   });
 
@@ -1117,17 +1095,12 @@ program
     '-k, --api-key <key>',
     'Authenticate with this API key (skips interactive login)'
   )
-  .option(
-    '-b, --browser',
-    'Authenticate via browser without prompting (recommended for agents)'
-  )
   .option('--skip-auth', 'Skip authentication')
   .action(async (template, options) => {
     await handleInitCommand({
       template,
       yes: options.yes,
       apiKey: options.apiKey,
-      browser: options.browser,
       skipAuth: options.skipAuth,
     });
   });
@@ -1202,13 +1175,13 @@ async function main() {
     return;
   }
 
-  // Shorthand: `firecrawl -y` → `firecrawl init -y --browser`
+  // Shorthand: `firecrawl -y` → `firecrawl init -y`
   if (
     args.length >= 1 &&
     (args[0] === '-y' || args[0] === '--yes') &&
     args.length <= 1
   ) {
-    await handleInitCommand({ yes: true, browser: true });
+    await handleInitCommand({ yes: true });
     return;
   }
 

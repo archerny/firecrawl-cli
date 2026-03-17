@@ -39,12 +39,9 @@ On first run, you'll be prompted to authenticate:
 
 Welcome! To get started, authenticate with your Firecrawl account.
 
-  1. Login with browser (recommended)
-  2. Enter API key manually
-
 Tip: You can also set FIRECRAWL_API_KEY environment variable
 
-Enter choice [1/2]:
+Enter your Firecrawl API key:
 ```
 
 ### Authentication Methods
@@ -52,9 +49,6 @@ Enter choice [1/2]:
 ```bash
 # Interactive (prompts automatically when needed)
 firecrawl
-
-# Browser login
-firecrawl login
 
 # Direct API key
 firecrawl login --api-key fc-your-api-key

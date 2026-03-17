@@ -4,7 +4,7 @@
  * Usage:  npx -y firecrawl-cli init
  */
 
-import { isAuthenticated, browserLogin, interactiveLogin } from '../utils/auth';
+import { isAuthenticated, manualLogin } from '../utils/auth';
 import { saveCredentials } from '../utils/credentials';
 import { updateConfig } from '../utils/config';
 
@@ -12,7 +12,6 @@ export interface InitOptions {
   yes?: boolean;
   skipAuth?: boolean;
   apiKey?: string;
-  browser?: boolean;
   template?: string;
 }
 
@@ -107,34 +106,24 @@ async function stepAuth(options: InitOptions): Promise<boolean> {
     }
   }
 
-  const { select } = await import('@inquirer/prompts');
-  const method = await select({
-    message: 'How would you like to authenticate?',
-    choices: [
-      { name: 'Login via browser (recommended)', value: 'browser' },
-      { name: 'Enter API key manually', value: 'manual' },
-      { name: 'Skip for now', value: 'skip' },
-    ],
+  const { confirm: confirmPrompt } = await import('@inquirer/prompts');
+  const wantAuth = await confirmPrompt({
+    message: 'Authenticate with your Firecrawl API key now?',
+    default: true,
   });
 
-  if (method === 'skip') {
+  if (!wantAuth) {
     console.log(`  ${dim}Skipped. Run "firecrawl login" later.${reset}\n`);
     return true;
   }
 
   try {
-    let result: { apiKey: string; apiUrl?: string; teamName?: string };
-    if (method === 'browser') {
-      result = await browserLogin();
-    } else {
-      result = await interactiveLogin();
-    }
+    const result = await manualLogin();
 
     saveCredentials({ apiKey: result.apiKey, apiUrl: result.apiUrl });
     updateConfig({ apiKey: result.apiKey, apiUrl: result.apiUrl });
 
-    const teamSuffix = result.teamName ? ` (Team: ${result.teamName})` : '';
-    console.log(`  ${green}✓${reset} Authenticated${teamSuffix}\n`);
+    console.log(`  ${green}✓${reset} Authenticated\n`);
     return true;
   } catch (error) {
     console.error(
@@ -423,16 +412,10 @@ async function runNonInteractive(options: InitOptions): Promise<void> {
     } else {
       console.log(`  Authenticating with Firecrawl...`);
       try {
-        let result: { apiKey: string; apiUrl?: string; teamName?: string };
-        if (options.browser || !options.apiKey) {
-          result = await browserLogin();
-        } else {
-          result = await interactiveLogin();
-        }
+        const result = await manualLogin();
         saveCredentials({ apiKey: result.apiKey, apiUrl: result.apiUrl });
         updateConfig({ apiKey: result.apiKey, apiUrl: result.apiUrl });
-        const teamSuffix = result.teamName ? ` (Team: ${result.teamName})` : '';
-        console.log(`  ${green}✓${reset} Authenticated${teamSuffix}\n`);
+        console.log(`  ${green}✓${reset} Authenticated\n`);
       } catch (error) {
         console.error(
           '\n  Authentication failed:',
