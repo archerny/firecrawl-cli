@@ -41,11 +41,6 @@ import { ensureAuthenticated, printBanner } from './utils/auth';
 import packageJson from '../package.json';
 import type { SearchSource, SearchCategory } from './types/search';
 import type { ScrapeFormat } from './types/scrape';
-import {
-  createClaudeCommand,
-  createCodexCommand,
-  createOpenCodeCommand,
-} from './commands/experimental';
 
 // Initialize global configuration from environment variables
 initializeConfig();
@@ -1025,11 +1020,6 @@ program.addCommand(createMapCommand());
 program.addCommand(createSearchCommand());
 program.addCommand(createAgentCommand());
 program.addCommand(createBrowserCommand());
-
-// Experimental: AI workflow commands
-program.addCommand(createClaudeCommand());
-program.addCommand(createCodexCommand());
-program.addCommand(createOpenCodeCommand());
 
 program
   .command('config')

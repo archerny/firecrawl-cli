@@ -262,17 +262,3 @@ firecrawl view-config
 | `--api-url <url>`     | Use custom API URL (for self-hosted/local development) |
 | `-V, --version`       | Show version                                           |
 | `-h, --help`          | Show help                                              |
-
----
-
-## Experimental: AI Workflows
-
-Launch pre-built AI workflows that combine Firecrawl's web capabilities with your coding agent.
-
-```bash
-firecrawl claude deep-research "topic"
-firecrawl claude competitor-analysis https://example.com
-firecrawl claude qa https://myapp.com
-```
-
-See the full documentation: **[Experimental Workflows ->](src/commands/experimental/README.md)**
