@@ -17,8 +17,6 @@ export interface AgentOptions {
   schema?: Record<string, unknown>;
   /** Path to JSON schema file */
   schemaFile?: string;
-  /** Maximum credits to spend (job fails if exceeded) */
-  maxCredits?: number;
   /** Check status of existing agent job */
   status?: boolean;
   /** Wait for agent to complete before returning results */
@@ -54,7 +52,6 @@ export interface AgentStatusResult {
     id: string;
     status: AgentStatus;
     data?: any;
-    creditsUsed?: number;
     expiresAt?: string;
   };
   error?: string;

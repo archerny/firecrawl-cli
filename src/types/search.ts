@@ -107,6 +107,5 @@ export interface SearchResult {
   data?: SearchResultData;
   warning?: string;
   id?: string;
-  creditsUsed?: number;
   error?: string;
 }

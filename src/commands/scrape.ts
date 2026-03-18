@@ -486,28 +486,13 @@ export async function handleAllScrapeCommand(
     urls = urls.slice(0, limit);
   }
 
-  // Preflight: check credits and concurrency
+  // Preflight: check concurrency
   const status = await getStatus();
   const maxConcurrency = status.concurrency?.max || urls.length;
 
-  if (status.credits) {
-    const creditsNeeded = urls.length;
-    const remaining = status.credits.remaining;
-
-    if (creditsNeeded > remaining) {
-      console.error(
-        `Error: Not enough credits. Need ${creditsNeeded}, have ${remaining}.`
-      );
-      process.exit(1);
-    }
-  }
-
   if (!yes) {
-    const creditsMsg = status.credits
-      ? `, ${urls.length} credits (${status.credits.remaining.toLocaleString()} remaining)`
-      : '';
     process.stderr.write(
-      `\nScrape ${urls.length} pages${creditsMsg}, ${maxConcurrency} at a time.\n`
+      `\nScrape ${urls.length} pages, ${maxConcurrency} at a time.\n`
     );
 
     const answer = await ask('Continue? (y/N or enter a number to set limit) ');

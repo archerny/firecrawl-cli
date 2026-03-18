@@ -29,7 +29,6 @@ async function checkCrawlStatus(
         status: status.status,
         total: status.total,
         completed: status.completed,
-        creditsUsed: status.creditsUsed,
         expiresAt: status.expiresAt,
       },
     };
@@ -192,10 +191,6 @@ function formatCrawlStatus(data: CrawlStatusResult['data']): string {
   lines.push(`Job ID: ${data.id}`);
   lines.push(`Status: ${data.status}`);
   lines.push(`Progress: ${data.completed}/${data.total} pages`);
-
-  if (data.creditsUsed !== undefined) {
-    lines.push(`Credits Used: ${data.creditsUsed}`);
-  }
 
   if (data.expiresAt) {
     const expiresDate = new Date(data.expiresAt);

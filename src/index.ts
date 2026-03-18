@@ -13,7 +13,7 @@ import {
 } from './commands/scrape';
 import { initializeConfig, updateConfig } from './utils/config';
 import { configure, viewConfig } from './commands/config';
-import { handleCreditUsageCommand } from './commands/credit-usage';
+
 import { handleCrawlCommand } from './commands/crawl';
 import { handleMapCommand } from './commands/map';
 import { handleSearchCommand } from './commands/search';
@@ -26,8 +26,7 @@ import {
   handleBrowserQuickExecute,
 } from './commands/browser';
 import { handleVersionCommand } from './commands/version';
-import { handleLoginCommand } from './commands/login';
-import { handleLogoutCommand } from './commands/logout';
+
 import {
   handleInitCommand,
   scaffoldTemplate,
@@ -54,7 +53,6 @@ const AUTH_REQUIRED_COMMANDS = [
   'search',
   'agent',
   'browser',
-  'credit-usage',
 ];
 
 const program = new Command();
@@ -68,7 +66,7 @@ program
     'Firecrawl API key (or set FIRECRAWL_API_KEY env var)'
   )
   .option('--api-url <url>', 'API URL (or set FIRECRAWL_API_URL env var)')
-  .option('--status', 'Show version, auth status, concurrency, and credits')
+  .option('--status', 'Show version, auth status, and concurrency')
   .allowUnknownOption() // Allow unknown options when URL is passed directly
   .hook('preAction', async (thisCommand, actionCommand) => {
     // Update global config if API key or URL is provided via global option
@@ -633,11 +631,7 @@ function createAgentCommand(): Command {
       '--schema-file <path>',
       'Path to JSON schema file for structured output'
     )
-    .option(
-      '--max-credits <number>',
-      'Maximum credits to spend (job fails if exceeded)',
-      parseInt
-    )
+
     .option('--status', 'Check status of existing agent job', false)
     .option(
       '--wait',
@@ -701,7 +695,6 @@ function createAgentCommand(): Command {
         schema,
         schemaFile: options.schemaFile,
         model: options.model,
-        maxCredits: options.maxCredits,
         status: isStatusCheck,
         wait: options.wait,
         pollInterval: options.pollInterval,
@@ -1044,29 +1037,6 @@ program
   });
 
 program
-  .command('login')
-  .description('Login to Firecrawl (alias for config)')
-  .option(
-    '-k, --api-key <key>',
-    'Provide API key directly (skips interactive flow)'
-  )
-  .option('--api-url <url>', 'API URL')
-  .action(async (options) => {
-    const globalOptions = program.opts();
-    await handleLoginCommand({
-      apiKey: options.apiKey ?? globalOptions.apiKey,
-      apiUrl: options.apiUrl ?? globalOptions.apiUrl,
-    });
-  });
-
-program
-  .command('logout')
-  .description('Logout and clear stored credentials')
-  .action(async () => {
-    await handleLogoutCommand();
-  });
-
-program
   .command('init')
   .description('Set up Firecrawl: authenticate and scaffold a template')
   .argument(
@@ -1086,25 +1056,6 @@ program
       apiKey: options.apiKey,
       skipAuth: options.skipAuth,
     });
-  });
-
-program
-  .command('credit-usage')
-  .description('Get team credit usage information')
-  .option(
-    '-k, --api-key <key>',
-    'Firecrawl API key (overrides global --api-key)'
-  )
-  .option('--api-url <url>', 'API URL (overrides global --api-url)')
-  .option('-o, --output <path>', 'Output file path (default: stdout)')
-  .option('--json', 'Output as JSON format', false)
-  .option(
-    '--pretty',
-    'Pretty print JSON output (only applies with --json)',
-    false
-  )
-  .action(async (options) => {
-    await handleCreditUsageCommand(options);
   });
 
 program

@@ -1,6 +1,6 @@
 /**
  * Status command implementation
- * Displays CLI version, auth status, concurrency, and credits
+ * Displays CLI version, auth status, and concurrency
  */
 
 import { promises as fs } from 'fs';
@@ -21,16 +21,6 @@ interface QueueStatusResponse {
   mostRecentSuccess?: string | null;
 }
 
-interface CreditUsageResponse {
-  success: boolean;
-  data?: {
-    remainingCredits: number;
-    planCredits: number;
-    billingPeriodStart: string | null;
-    billingPeriodEnd: string | null;
-  };
-}
-
 interface StatusResult {
   version: string;
   authenticated: boolean;
@@ -38,10 +28,6 @@ interface StatusResult {
   concurrency?: {
     active: number;
     max: number;
-  };
-  credits?: {
-    remaining: number;
-    plan: number;
   };
   error?: string;
 }
@@ -94,32 +80,6 @@ async function fetchQueueStatus(
 }
 
 /**
- * Fetch credit usage from API
- */
-async function fetchCreditUsage(
-  apiKey: string,
-  apiUrl: string
-): Promise<CreditUsageResponse> {
-  const url = `${apiUrl.replace(/\/$/, '')}/v2/team/credit-usage`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.error || `HTTP ${response.status}: ${response.statusText}`
-    );
-  }
-
-  return response.json();
-}
-
-/**
  * Get full status information
  */
 export async function getStatus(): Promise<StatusResult> {
@@ -145,23 +105,13 @@ export async function getStatus(): Promise<StatusResult> {
       return result;
     }
 
-    // Fetch both endpoints in parallel
-    const [queueStatus, creditUsage] = await Promise.all([
-      fetchQueueStatus(apiKey, apiUrl),
-      fetchCreditUsage(apiKey, apiUrl),
-    ]);
+    // Fetch queue status
+    const queueStatus = await fetchQueueStatus(apiKey, apiUrl);
 
     if (queueStatus.success && queueStatus.maxConcurrency !== undefined) {
       result.concurrency = {
         active: queueStatus.activeJobsInQueue || 0,
         max: queueStatus.maxConcurrency,
-      };
-    }
-
-    if (creditUsage.success && creditUsage.data) {
-      result.credits = {
-        remaining: creditUsage.data.remainingCredits,
-        plan: creditUsage.data.planCredits,
       };
     }
   } catch (error: any) {
@@ -274,7 +224,7 @@ export async function handleStatusCommand(): Promise<void> {
     );
   } else {
     console.log(`  ${red}●${reset} Not authenticated`);
-    console.log(`  ${dim}Run 'firecrawl login' to authenticate${reset}`);
+    console.log(`  ${dim}Run 'firecrawl config' to configure${reset}`);
     console.log('');
     if (localStatus.firecrawlDirExists) {
       console.log(
@@ -334,21 +284,6 @@ export async function handleStatusCommand(): Promise<void> {
     console.log(
       `  ${dim}Concurrency:${reset} ${active}/${max} jobs ${dim}(parallel scrape limit)${reset}`
     );
-  }
-
-  // Credits
-  if (status.credits) {
-    const { remaining, plan } = status.credits;
-    if (plan > 0) {
-      const percent = ((remaining / plan) * 100).toFixed(0);
-      console.log(
-        `  ${dim}Credits:${reset} ${formatNumber(remaining)} / ${formatNumber(plan)} ${dim}(${percent}% left this cycle)${reset}`
-      );
-    } else {
-      console.log(
-        `  ${dim}Credits:${reset} ${formatNumber(remaining)} ${dim}(pay-as-you-go)${reset}`
-      );
-    }
   }
 
   if (localStatus.firecrawlDirExists) {

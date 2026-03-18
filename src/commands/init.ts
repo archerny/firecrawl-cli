@@ -113,7 +113,7 @@ async function stepAuth(options: InitOptions): Promise<boolean> {
   });
 
   if (!wantAuth) {
-    console.log(`  ${dim}Skipped. Run "firecrawl login" later.${reset}\n`);
+    console.log(`  ${dim}Skipped. Run "firecrawl config" later.${reset}\n`);
     return true;
   }
 
@@ -131,7 +131,7 @@ async function stepAuth(options: InitOptions): Promise<boolean> {
       error instanceof Error ? error.message : 'Unknown error'
     );
     console.log(
-      `  ${dim}You can authenticate later with: firecrawl login${reset}\n`
+      `  ${dim}You can authenticate later with: firecrawl config${reset}\n`
     );
     return true;
   }

@@ -257,7 +257,6 @@ describe('executeCrawl', () => {
         status: 'completed',
         total: 100,
         completed: 100,
-        creditsUsed: 50,
         expiresAt: '2024-12-31T23:59:59Z',
       };
       mockClient.getCrawlStatus.mockResolvedValue(mockStatus);
@@ -278,7 +277,6 @@ describe('executeCrawl', () => {
           status: mockStatus.status,
           total: mockStatus.total,
           completed: mockStatus.completed,
-          creditsUsed: mockStatus.creditsUsed,
           expiresAt: mockStatus.expiresAt,
         },
       });
@@ -317,7 +315,6 @@ describe('executeCrawl', () => {
 
       expect(result.success).toBe(true);
       if (result.success && 'data' in result) {
-        expect(result.data?.creditsUsed).toBeUndefined();
         expect(result.data?.expiresAt).toBeUndefined();
       }
     });

@@ -127,7 +127,6 @@ export async function executeSearch(
       data,
       warning: (result as any)?.warning,
       id: (result as any)?.id,
-      creditsUsed: (result as any)?.creditsUsed,
     };
   } catch (error) {
     return {
@@ -273,9 +272,6 @@ export async function handleSearchCommand(
     }
     if (result.id) {
       jsonOutput.id = result.id;
-    }
-    if (result.creditsUsed !== undefined) {
-      jsonOutput.creditsUsed = result.creditsUsed;
     }
 
     outputContent = options.pretty

@@ -93,14 +93,14 @@ export function validateConfig(apiKey?: string): void {
   const key = getApiKey(apiKey);
   if (!key) {
     throw new Error(
-      'API key is required. Set FIRECRAWL_API_KEY environment variable, use --api-key flag, or run "firecrawl login" to configure.'
+      'API key is required. Set FIRECRAWL_API_KEY environment variable, use --api-key flag, or run "firecrawl config" to configure.'
     );
   }
 
   const url = getApiUrl();
   if (!url) {
     throw new Error(
-      'API URL is required. Set FIRECRAWL_API_URL environment variable, use --api-url flag, or run "firecrawl login" to configure.'
+      'API URL is required. Set FIRECRAWL_API_URL environment variable, use --api-url flag, or run "firecrawl config" to configure.'
     );
   }
 }

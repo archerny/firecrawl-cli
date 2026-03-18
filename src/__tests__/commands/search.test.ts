@@ -556,21 +556,6 @@ describe('executeSearch', () => {
       expect(result.id).toBe('search-123');
     });
 
-    it('should include creditsUsed in result when present', async () => {
-      const mockResponse = {
-        web: [{ url: 'https://example.com', title: 'Test' }],
-        creditsUsed: 5,
-      };
-      mockClient.search.mockResolvedValue(mockResponse);
-
-      const result = await executeSearch({
-        query: 'test',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.creditsUsed).toBe(5);
-    });
-
     it('should handle empty results', async () => {
       const mockResponse = {};
       mockClient.search.mockResolvedValue(mockResponse);

@@ -52,7 +52,7 @@ Enter your API key:
 firecrawl
 
 # Direct API key and URL
-firecrawl login --api-url https://api.firecrawl.dev --api-key your-api-key
+firecrawl config --api-url https://api.firecrawl.dev --api-key your-api-key
 
 # Environment variables
 export FIRECRAWL_API_URL=https://api.firecrawl.dev
@@ -68,7 +68,7 @@ For self-hosted Firecrawl instances or local development:
 
 ```bash
 # Use a local Firecrawl instance
-firecrawl login --api-url http://localhost:3002 --api-key your-local-key
+firecrawl config --api-url http://localhost:3002 --api-key your-local-key
 
 # Or set via environment variables
 export FIRECRAWL_API_URL=http://localhost:3002
@@ -234,20 +234,11 @@ firecrawl browser close
 
 ---
 
-### `credit-usage` - Check your credits
+### `config` / `view-config`
 
 ```bash
-firecrawl credit-usage
-```
-
----
-
-### `config` / `login` / `logout`
-
-```bash
-firecrawl login
-firecrawl login --api-key fc-xxx
-firecrawl logout
+firecrawl config
+firecrawl config --api-url http://localhost:3002 --api-key your-key
 firecrawl view-config
 ```
 
@@ -257,7 +248,7 @@ firecrawl view-config
 
 | Option                | Description                                            |
 | --------------------- | ------------------------------------------------------ |
-| `--status`            | Show version, auth, concurrency, and credits           |
+| `--status`            | Show version, auth, and concurrency                    |
 | `-k, --api-key <key>` | Use specific API key                                   |
 | `--api-url <url>`     | Use custom API URL (for self-hosted/local development) |
 | `-V, --version`       | Show version                                           |

@@ -3,9 +3,13 @@
  * Handles configuration and authentication
  */
 
-import { loadCredentials, getConfigDirectoryPath } from '../utils/credentials';
-import { getConfig } from '../utils/config';
-import { isAuthenticated } from '../utils/auth';
+import {
+  loadCredentials,
+  saveCredentials,
+  getConfigDirectoryPath,
+} from '../utils/credentials';
+import { getConfig, updateConfig } from '../utils/config';
+import { isAuthenticated, manualLogin } from '../utils/auth';
 
 export interface ConfigureOptions {
   apiKey?: string;
@@ -13,25 +17,40 @@ export interface ConfigureOptions {
 }
 
 /**
- * Configure/login - triggers login flow when not authenticated
+ * Configure - set API URL and API key
+ * If both are provided via options, saves directly.
+ * Otherwise, triggers interactive prompt.
  */
 export async function configure(options: ConfigureOptions = {}): Promise<void> {
-  // If not authenticated, trigger the login flow
-  if (!isAuthenticated() || options.apiKey) {
-    // Import handleLoginCommand to avoid circular dependency
-    const { handleLoginCommand } = await import('./login');
-    await handleLoginCommand({
-      apiKey: options.apiKey,
-      apiUrl: options.apiUrl,
-    });
+  // If not authenticated or explicit options provided, trigger config flow
+  if (!isAuthenticated() || options.apiKey || options.apiUrl) {
+    // If both key and url are provided, save directly
+    if (options.apiKey && options.apiUrl) {
+      saveCredentials({ apiKey: options.apiKey, apiUrl: options.apiUrl });
+      updateConfig({ apiKey: options.apiKey, apiUrl: options.apiUrl });
+      console.log('\n✓ Configuration saved successfully!\n');
+      return;
+    }
+
+    // Interactive flow - prompt for missing values
+    try {
+      const result = await manualLogin(options.apiUrl);
+      saveCredentials({ apiKey: result.apiKey, apiUrl: result.apiUrl });
+      updateConfig({ apiKey: result.apiKey, apiUrl: result.apiUrl });
+      console.log('\n✓ Configuration saved successfully!\n');
+    } catch (error) {
+      console.error(
+        '\nConfiguration failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      process.exit(1);
+    }
     return;
   }
 
-  // Already authenticated - show config and offer to re-authenticate
+  // Already authenticated - show current config
   await viewConfig();
-  console.log(
-    'To re-authenticate, run: firecrawl logout && firecrawl config\n'
-  );
+  console.log('To re-configure, run: firecrawl config --api-key <key>\n');
 }
 
 /**
@@ -55,12 +74,12 @@ export async function viewConfig(): Promise<void> {
     console.log(`API URL:  ${config.apiUrl || 'Not set'}`);
     console.log(`Config:   ${getConfigDirectoryPath()}`);
     console.log('\nCommands:');
-    console.log('  firecrawl logout       Clear credentials');
-    console.log('  firecrawl config       Re-authenticate');
+    console.log('  firecrawl config       Re-configure');
+    console.log('  firecrawl view-config  View configuration');
   } else {
     console.log('Status: Not authenticated\n');
     console.log('Run any command to start authentication, or use:');
-    console.log('  firecrawl config    Authenticate with API key');
+    console.log('  firecrawl config    Configure API URL and API key');
   }
   console.log('');
 }

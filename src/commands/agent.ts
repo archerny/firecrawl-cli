@@ -81,7 +81,6 @@ async function checkAgentStatus(
           id: jobId,
           status: status.status,
           data: status.data,
-          creditsUsed: status.creditsUsed,
           expiresAt: status.expiresAt,
         },
       };
@@ -124,7 +123,6 @@ async function checkAgentStatus(
             id: jobId,
             status: agentStatus.status,
             data: agentStatus.data,
-            creditsUsed: agentStatus.creditsUsed,
             expiresAt: agentStatus.expiresAt,
           },
         };
@@ -138,7 +136,6 @@ async function checkAgentStatus(
             id: jobId,
             status: agentStatus.status,
             data: agentStatus.data,
-            creditsUsed: agentStatus.creditsUsed,
             expiresAt: agentStatus.expiresAt,
           },
           error: agentStatus.error,
@@ -198,7 +195,6 @@ export async function executeAgent(
       urls?: string[];
       schema?: Record<string, unknown>;
       model?: 'spark-1-pro' | 'spark-1-mini';
-      maxCredits?: number;
       pollInterval?: number;
       timeout?: number;
       integration?: string;
@@ -215,9 +211,6 @@ export async function executeAgent(
     }
     if (options.model) {
       agentParams.model = options.model as 'spark-1-pro' | 'spark-1-mini';
-    }
-    if (options.maxCredits !== undefined) {
-      agentParams.maxCredits = options.maxCredits;
     }
 
     // If wait mode, use polling with spinner
@@ -269,7 +262,6 @@ export async function executeAgent(
                 id: jobId,
                 status: agentStatus.status,
                 data: agentStatus.data,
-                creditsUsed: agentStatus.creditsUsed,
                 expiresAt: agentStatus.expiresAt,
               },
             };
@@ -284,7 +276,6 @@ export async function executeAgent(
                 id: jobId,
                 status: agentStatus.status,
                 data: agentStatus.data,
-                creditsUsed: agentStatus.creditsUsed,
                 expiresAt: agentStatus.expiresAt,
               },
               error: agentStatus.error,
@@ -347,10 +338,6 @@ function formatAgentStatus(data: AgentStatusResult['data']): string {
   const lines: string[] = [];
   lines.push(`Job ID: ${data.id}`);
   lines.push(`Status: ${data.status}`);
-
-  if (data.creditsUsed !== undefined) {
-    lines.push(`Credits Used: ${data.creditsUsed}`);
-  }
 
   if (data.expiresAt) {
     const expiresDate = new Date(data.expiresAt);

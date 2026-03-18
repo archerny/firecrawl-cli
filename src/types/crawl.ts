@@ -60,7 +60,6 @@ export interface CrawlStatusResult {
     status: 'scraping' | 'completed' | 'failed' | 'cancelled';
     total: number;
     completed: number;
-    creditsUsed?: number;
     expiresAt?: string;
   };
   error?: string;
