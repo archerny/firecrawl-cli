@@ -19,19 +19,12 @@ function getConfigDir(): string {
   const homeDir = os.homedir();
   const platform = os.platform();
 
-  switch (platform) {
-    case 'darwin': // macOS
-      return path.join(
-        homeDir,
-        'Library',
-        'Application Support',
-        'firecrawl-cli'
-      );
-    case 'win32': // Windows
-      return path.join(homeDir, 'AppData', 'Roaming', 'firecrawl-cli');
-    default: // Linux and others
-      return path.join(homeDir, '.config', 'firecrawl-cli');
+  if (platform === 'win32') {
+    return path.join(homeDir, 'AppData', 'Roaming', 'firecrawl-cli');
   }
+
+  // macOS, Linux and others
+  return path.join(homeDir, '.config', 'firecrawl-cli');
 }
 
 /**
