@@ -45,9 +45,8 @@ describe('Credentials Utilities', () => {
 
       const configPath = getConfigDirectoryPath();
 
-      expect(configPath).toBe(
-        '/home/testuser/Library/Application Support/firecrawl-cli'
-      );
+      // credentials.ts uses ~/.config/ for macOS and Linux (no special macOS path)
+      expect(configPath).toBe('/home/testuser/.config/firecrawl-cli');
     });
 
     it('should return Windows config path', () => {

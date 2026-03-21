@@ -40,7 +40,9 @@ async function manualLogin(
   // Prompt for API URL if not provided
   let effectiveApiUrl = apiUrl;
   if (!effectiveApiUrl) {
-    effectiveApiUrl = await promptInput('Enter your API URL: ');
+    effectiveApiUrl = await promptInput(
+      'Enter your API URL (e.g. https://api.firecrawl.dev): '
+    );
     if (!effectiveApiUrl || effectiveApiUrl.trim().length === 0) {
       throw new Error('API URL cannot be empty');
     }

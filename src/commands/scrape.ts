@@ -170,7 +170,7 @@ export async function handleScrapeCommand(
 /**
  * Generate a filename from a URL for saving to .firecrawl/
  */
-function urlToFilename(url: string): string {
+export function urlToFilename(url: string): string {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.replace(/^www\./, '');
@@ -248,7 +248,10 @@ export async function handleMultiScrapeCommand(
  * e.g. https://docs.example.com/features/scrape → docs.example.com/features/scrape/index.md
  *      https://docs.example.com/ → docs.example.com/index.md
  */
-function urlToNestedPath(url: string, filename: string = 'index.md'): string {
+export function urlToNestedPath(
+  url: string,
+  filename: string = 'index.md'
+): string {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.replace(/^www\./, '');
@@ -292,7 +295,7 @@ async function ask(question: string): Promise<string> {
 /**
  * Extract top-level path segments from URLs and return them with counts, sorted by frequency.
  */
-function getTopPaths(urls: string[]): { path: string; count: number }[] {
+export function getTopPaths(urls: string[]): { path: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const url of urls) {
     try {

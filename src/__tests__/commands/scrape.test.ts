@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { executeScrape } from '../../commands/scrape';
+import {
+  executeScrape,
+  urlToFilename,
+  urlToNestedPath,
+  getTopPaths,
+} from '../../commands/scrape';
 import { getClient } from '../../utils/client';
 import { initializeConfig } from '../../utils/config';
 import { setupTest, teardownTest } from '../utils/mock-client';
@@ -424,5 +429,162 @@ describe('executeScrape', () => {
         integration: 'cli',
       });
     });
+  });
+});
+
+describe('urlToFilename', () => {
+  it('should generate filename from simple URL', () => {
+    expect(urlToFilename('https://example.com')).toBe('example.com.md');
+  });
+
+  it('should generate filename from URL with path', () => {
+    expect(urlToFilename('https://example.com/about')).toBe(
+      'example.com-about.md'
+    );
+  });
+
+  it('should generate filename from URL with nested path', () => {
+    expect(urlToFilename('https://example.com/docs/api/v2')).toBe(
+      'example.com-docs-api-v2.md'
+    );
+  });
+
+  it('should strip www prefix', () => {
+    expect(urlToFilename('https://www.example.com/page')).toBe(
+      'example.com-page.md'
+    );
+  });
+
+  it('should strip trailing slash from path', () => {
+    expect(urlToFilename('https://example.com/about/')).toBe(
+      'example.com-about.md'
+    );
+  });
+
+  it('should handle root URL with trailing slash', () => {
+    expect(urlToFilename('https://example.com/')).toBe('example.com.md');
+  });
+
+  it('should handle invalid URL by sanitizing', () => {
+    const result = urlToFilename('not a valid url');
+    expect(result).toMatch(/\.md$/);
+    expect(result).not.toContain(' ');
+  });
+});
+
+describe('urlToNestedPath', () => {
+  it('should create nested path from URL with path', () => {
+    expect(urlToNestedPath('https://docs.example.com/features/scrape')).toBe(
+      'docs.example.com/features/scrape/index.md'
+    );
+  });
+
+  it('should create path for root URL', () => {
+    expect(urlToNestedPath('https://docs.example.com/')).toBe(
+      'docs.example.com/index.md'
+    );
+  });
+
+  it('should create path for root URL without trailing slash', () => {
+    expect(urlToNestedPath('https://docs.example.com')).toBe(
+      'docs.example.com/index.md'
+    );
+  });
+
+  it('should strip www prefix', () => {
+    expect(urlToNestedPath('https://www.example.com/docs')).toBe(
+      'example.com/docs/index.md'
+    );
+  });
+
+  it('should use custom filename', () => {
+    expect(urlToNestedPath('https://example.com/page', 'index.html')).toBe(
+      'example.com/page/index.html'
+    );
+  });
+
+  it('should use empty filename for directory only', () => {
+    expect(urlToNestedPath('https://example.com/path', '')).toBe(
+      'example.com/path/'
+    );
+  });
+
+  it('should handle invalid URL by sanitizing', () => {
+    const result = urlToNestedPath('not a url');
+    expect(result).toContain('index.md');
+  });
+});
+
+describe('getTopPaths', () => {
+  it('should extract top-level path segments with counts', () => {
+    const urls = [
+      'https://example.com/docs/intro',
+      'https://example.com/docs/api',
+      'https://example.com/docs/guide',
+      'https://example.com/blog/post1',
+      'https://example.com/blog/post2',
+    ];
+
+    const result = getTopPaths(urls);
+
+    expect(result).toEqual([
+      { path: '/docs', count: 3 },
+      { path: '/blog', count: 2 },
+    ]);
+  });
+
+  it('should sort by frequency descending', () => {
+    const urls = [
+      'https://example.com/a/1',
+      'https://example.com/b/1',
+      'https://example.com/b/2',
+      'https://example.com/b/3',
+      'https://example.com/c/1',
+      'https://example.com/c/2',
+    ];
+
+    const result = getTopPaths(urls);
+
+    expect(result[0].path).toBe('/b');
+    expect(result[0].count).toBe(3);
+    expect(result[1].path).toBe('/c');
+    expect(result[1].count).toBe(2);
+    expect(result[2].path).toBe('/a');
+    expect(result[2].count).toBe(1);
+  });
+
+  it('should handle root URLs (no path segment)', () => {
+    const urls = ['https://example.com/', 'https://example.com'];
+
+    const result = getTopPaths(urls);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should handle empty array', () => {
+    expect(getTopPaths([])).toEqual([]);
+  });
+
+  it('should skip invalid URLs', () => {
+    const urls = [
+      'https://example.com/docs/intro',
+      'not-a-url',
+      'https://example.com/docs/api',
+    ];
+
+    const result = getTopPaths(urls);
+
+    expect(result).toEqual([{ path: '/docs', count: 2 }]);
+  });
+
+  it('should handle single-segment paths', () => {
+    const urls = ['https://example.com/about', 'https://example.com/contact'];
+
+    const result = getTopPaths(urls);
+
+    expect(result).toEqual([
+      { path: '/about', count: 1 },
+      { path: '/contact', count: 1 },
+    ]);
   });
 });

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isUrl, normalizeUrl } from '../../utils/url';
+import { isUrl, normalizeUrl, getOrigin } from '../../utils/url';
 
 describe('URL Utilities', () => {
   describe('isUrl', () => {
@@ -139,6 +139,58 @@ describe('URL Utilities', () => {
       );
       expect(normalizeUrl('example.com:8080/api')).toBe(
         'https://example.com:8080/api'
+      );
+    });
+  });
+
+  describe('getOrigin', () => {
+    it('should extract origin from full URL with path', () => {
+      expect(getOrigin('https://docs.example.com/features/scrape')).toBe(
+        'https://docs.example.com'
+      );
+    });
+
+    it('should extract origin from URL with query params', () => {
+      expect(getOrigin('https://example.com/path?key=value&foo=bar')).toBe(
+        'https://example.com'
+      );
+    });
+
+    it('should extract origin from URL with port', () => {
+      expect(getOrigin('https://example.com:8080/api/v2')).toBe(
+        'https://example.com:8080'
+      );
+    });
+
+    it('should handle root URL (no path)', () => {
+      expect(getOrigin('https://example.com')).toBe('https://example.com');
+      expect(getOrigin('https://example.com/')).toBe('https://example.com');
+    });
+
+    it('should normalize URL without protocol before extracting origin', () => {
+      expect(getOrigin('docs.firecrawl.dev/api/reference')).toBe(
+        'https://docs.firecrawl.dev'
+      );
+    });
+
+    it('should handle http protocol', () => {
+      expect(getOrigin('http://example.com/path')).toBe('http://example.com');
+    });
+
+    it('should handle subdomains', () => {
+      expect(getOrigin('https://sub.domain.example.com/path')).toBe(
+        'https://sub.domain.example.com'
+      );
+    });
+
+    it('should return original URL when parsing fails', () => {
+      // URLs that can't be parsed by URL constructor even with normalization
+      expect(getOrigin('')).toBe('');
+    });
+
+    it('should strip fragment from origin', () => {
+      expect(getOrigin('https://example.com/page#section')).toBe(
+        'https://example.com'
       );
     });
   });
