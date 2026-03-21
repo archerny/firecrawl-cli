@@ -1,24 +1,45 @@
 # Testing Guide
 
-This directory contains tests for the Firecrawl CLI commands. Tests use Vitest and mock the Firecrawl client to avoid making real API calls.
+This directory contains tests for the Firecrawl CLI. Tests use **Vitest** with **v8** coverage and mock the Firecrawl client to avoid making real API calls.
 
 ## Running Tests
 
 ```bash
-# Run tests once
-pnpm test:run
+# Run all tests once
+pnpm test
 
 # Run tests in watch mode
 pnpm test:watch
 
-# Run tests with UI
-pnpm test:ui
+# Run tests with coverage report
+npx vitest run --coverage
 ```
 
 ## Test Structure
 
-- `commands/` - Tests for command implementations
-- `utils/` - Test utilities and helpers
+```
+__tests__/
+├── commands/                # Command implementation tests
+│   ├── agent.test.ts
+│   ├── browser.test.ts
+│   ├── config.test.ts
+│   ├── crawl.test.ts
+│   ├── map.test.ts
+│   ├── scrape.test.ts
+│   ├── search.test.ts
+│   ├── status.test.ts
+│   └── version.test.ts
+└── utils/                   # Utility module tests & helpers
+    ├── mock-client.ts       # Shared mock client helper
+    ├── auth.test.ts
+    ├── browser-session.test.ts
+    ├── client.test.ts
+    ├── config.test.ts
+    ├── options.test.ts
+    ├── output.test.ts
+    ├── settings.test.ts
+    └── url.test.ts
+```
 
 ## Writing Tests
 
@@ -67,17 +88,67 @@ describe('executeScrape', () => {
 });
 ```
 
+### Common Mock Patterns
+
+#### Mocking Settings (src/utils/settings.ts)
+
+```typescript
+import * as settings from '../../utils/settings';
+
+vi.mock('../../utils/settings');
+
+vi.mocked(settings.loadSettings).mockReturnValue({
+  apiKey: 'test-key',
+  apiUrl: 'https://api.test.com',
+  dataDir: '/tmp/test-data',
+});
+```
+
+#### Mocking the Firecrawl Client
+
+```typescript
+import { getClient } from '../../utils/client';
+
+vi.mock('../../utils/client', async () => {
+  const actual = await vi.importActual('../../utils/client');
+  return { ...actual, getClient: vi.fn() };
+});
+
+const mockClient = { scrape: vi.fn(), map: vi.fn() };
+vi.mocked(getClient).mockReturnValue(mockClient);
+```
+
+#### Mocking Fetch API
+
+```typescript
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
+
+mockFetch.mockResolvedValue({
+  ok: true,
+  json: () => Promise.resolve({ success: true }),
+});
+```
+
 ## Test Utilities
 
 ### `setupTest()` / `teardownTest()`
 
-Resets client and config state between tests. Always use these in `beforeEach`/`afterEach`.
+Defined in `utils/mock-client.ts`. Resets client and config state between tests. Always use these in `beforeEach` / `afterEach`.
 
-### Mocking Patterns
+### Console Capture
 
-- **Client methods**: Mock `getClient()` to return a mock client with stubbed methods
-- **Fetch API**: Mock `global.fetch` for commands that use fetch directly
-- **Config**: Use `initializeConfig()` to set test configuration
+Many tests capture `console.log` / `console.error` output to verify user-facing messages:
+
+```typescript
+let consoleOutput: string[];
+beforeEach(() => {
+  consoleOutput = [];
+  vi.spyOn(console, 'log').mockImplementation((...args) => {
+    consoleOutput.push(args.join(' '));
+  });
+});
+```
 
 ## What to Test
 
@@ -85,3 +156,4 @@ Resets client and config state between tests. Always use these in `beforeEach`/`
 2. **Response Handling**: Test success and error response handling
 3. **Option Parsing**: Ensure CLI options are correctly converted to API parameters
 4. **Edge Cases**: Test with missing/optional parameters, null values, etc.
+5. **Configuration Flow**: Test settings loading, saving, and priority resolution
