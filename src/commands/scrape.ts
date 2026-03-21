@@ -12,6 +12,7 @@ import type {
 import { getClient } from '../utils/client';
 import { handleScrapeOutput, writeOutput } from '../utils/output';
 import { getOrigin } from '../utils/url';
+import { getDataDir } from '../utils/config';
 import { executeMap } from './map';
 import { getStatus } from './status';
 
@@ -168,7 +169,7 @@ export async function handleScrapeCommand(
 }
 
 /**
- * Generate a filename from a URL for saving to .firecrawl/
+ * Generate a filename from a URL for saving to data directory
  */
 export function urlToFilename(url: string): string {
   try {
@@ -186,7 +187,7 @@ export function urlToFilename(url: string): string {
 
 /**
  * Handle scrape for multiple URLs.
- * Each result is saved as a separate file in .firecrawl/
+ * Each result is saved as a separate file in the configured data directory.
  */
 export async function handleMultiScrapeCommand(
   urls: string[],
@@ -195,7 +196,14 @@ export async function handleMultiScrapeCommand(
   const fs = await import('fs');
   const path = await import('path');
 
-  const dir = '.firecrawl';
+  const dataDir = getDataDir();
+  if (!dataDir) {
+    throw new Error(
+      'Data directory is required. Run "firecrawl config" to configure.'
+    );
+  }
+
+  const dir = path.resolve(dataDir);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -514,7 +522,14 @@ export async function handleAllScrapeCommand(
     `Scraping ${urls.length}${limit ? ` of ${mapResult.data.links.length}` : ''} pages (${maxConcurrency} at a time)...\n`
   );
 
-  const baseDir = '.firecrawl';
+  const dataDir = getDataDir();
+  if (!dataDir) {
+    throw new Error(
+      'Data directory is required. Run "firecrawl config" to configure.'
+    );
+  }
+
+  const baseDir = path.resolve(dataDir);
   let completedCount = 0;
   let errorCount = 0;
   const total = urls.length;

@@ -5,13 +5,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { configure, viewConfig } from '../../commands/config';
 import { initializeConfig, resetConfig, getConfig } from '../../utils/config';
-import * as credentials from '../../utils/credentials';
+import * as settings from '../../utils/settings';
 import * as auth from '../../utils/auth';
 
-// Mock credentials module
-vi.mock('../../utils/credentials', () => ({
-  loadCredentials: vi.fn(),
-  saveCredentials: vi.fn(),
+// Mock settings module
+vi.mock('../../utils/settings', () => ({
+  loadSettings: vi.fn(),
+  saveSettings: vi.fn(),
   getConfigDirectoryPath: vi.fn().mockReturnValue('/mock/config/path'),
 }));
 
@@ -34,7 +34,8 @@ describe('Config Command', () => {
     vi.clearAllMocks();
     delete process.env.FIRECRAWL_API_KEY;
     delete process.env.FIRECRAWL_API_URL;
-    vi.mocked(credentials.loadCredentials).mockReturnValue(null);
+    delete process.env.FIRECRAWL_DATA_DIR;
+    vi.mocked(settings.loadSettings).mockReturnValue(null);
     consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     process.exit = vi.fn() as any;
@@ -47,15 +48,17 @@ describe('Config Command', () => {
   });
 
   describe('configure', () => {
-    it('should save directly when both apiKey and apiUrl are provided', async () => {
+    it('should save directly when apiKey, apiUrl, and dataDir are all provided', async () => {
       await configure({
         apiKey: 'fc-direct-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
-      expect(credentials.saveCredentials).toHaveBeenCalledWith({
+      expect(settings.saveSettings).toHaveBeenCalledWith({
         apiKey: 'fc-direct-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -67,14 +70,16 @@ describe('Config Command', () => {
       vi.mocked(auth.manualLogin).mockResolvedValue({
         apiKey: 'fc-manual-key',
         apiUrl: 'https://manual.api.dev',
+        dataDir: '/tmp/data',
       });
 
       await configure({ apiKey: 'fc-some-key' });
 
       expect(auth.manualLogin).toHaveBeenCalled();
-      expect(credentials.saveCredentials).toHaveBeenCalledWith({
+      expect(settings.saveSettings).toHaveBeenCalledWith({
         apiKey: 'fc-manual-key',
         apiUrl: 'https://manual.api.dev',
+        dataDir: '/tmp/data',
       });
     });
 
@@ -82,17 +87,22 @@ describe('Config Command', () => {
       vi.mocked(auth.manualLogin).mockResolvedValue({
         apiKey: 'fc-key',
         apiUrl: 'https://provided.api.dev',
+        dataDir: '/tmp/data',
       });
 
       await configure({ apiUrl: 'https://provided.api.dev' });
 
-      expect(auth.manualLogin).toHaveBeenCalledWith('https://provided.api.dev');
+      expect(auth.manualLogin).toHaveBeenCalledWith(
+        'https://provided.api.dev',
+        undefined
+      );
     });
 
-    it('should trigger interactive flow when not authenticated and no options', async () => {
+    it('should trigger interactive flow when not configured and no options', async () => {
       vi.mocked(auth.manualLogin).mockResolvedValue({
         apiKey: 'fc-new-key',
         apiUrl: 'https://api.dev',
+        dataDir: '/tmp/data',
       });
 
       await configure();
@@ -100,20 +110,22 @@ describe('Config Command', () => {
       expect(auth.manualLogin).toHaveBeenCalled();
     });
 
-    it('should show existing config when already authenticated', async () => {
+    it('should show existing config when already configured', async () => {
       initializeConfig({
         apiKey: 'fc-existing-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'fc-existing-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       await configure();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join('\n');
-      expect(output).toContain('Authenticated');
+      const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
+      expect(output).toContain('Configured');
       expect(output).toContain('fc-exi');
     });
 
@@ -129,46 +141,50 @@ describe('Config Command', () => {
   });
 
   describe('viewConfig', () => {
-    it('should display authenticated status with masked key', async () => {
+    it('should display configured status with masked key', async () => {
       initializeConfig({
         apiKey: 'fc-my-long-api-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'fc-my-long-api-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       await viewConfig();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join('\n');
-      expect(output).toContain('Authenticated');
+      const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
+      expect(output).toContain('Configured');
       expect(output).toContain('fc-my-');
       expect(output).not.toContain('fc-my-long-api-key');
     });
 
-    it('should display not authenticated when no credentials', async () => {
+    it('should display not configured when no settings', async () => {
       initializeConfig({});
 
       await viewConfig();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join('\n');
-      expect(output).toContain('Not authenticated');
+      const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
+      expect(output).toContain('Not configured');
     });
 
     it('should show config directory path', async () => {
       initializeConfig({
         apiKey: 'fc-key-123',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'fc-key-123',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       await viewConfig();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join('\n');
+      const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
       expect(output).toContain('/mock/config/path');
     });
 
@@ -176,16 +192,36 @@ describe('Config Command', () => {
       initializeConfig({
         apiKey: 'fc-key-xyz',
         apiUrl: 'https://custom.api.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'fc-key-xyz',
         apiUrl: 'https://custom.api.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       await viewConfig();
 
-      const output = consoleSpy.mock.calls.map((c) => c[0]).join('\n');
+      const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
       expect(output).toContain('https://custom.api.dev');
+    });
+
+    it('should show data directory when set', async () => {
+      initializeConfig({
+        apiKey: 'fc-key-xyz',
+        apiUrl: 'https://api.dev',
+        dataDir: '/tmp/firecrawl-data',
+      });
+      vi.mocked(settings.loadSettings).mockReturnValue({
+        apiKey: 'fc-key-xyz',
+        apiUrl: 'https://api.dev',
+        dataDir: '/tmp/firecrawl-data',
+      });
+
+      await viewConfig();
+
+      const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
+      expect(output).toContain('/tmp/firecrawl-data');
     });
   });
 });

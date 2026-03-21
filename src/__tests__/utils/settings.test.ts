@@ -1,5 +1,5 @@
 /**
- * Tests for credentials utilities
+ * Tests for settings utilities
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -7,11 +7,11 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {
-  loadCredentials,
-  saveCredentials,
-  deleteCredentials,
+  loadSettings,
+  saveSettings,
+  deleteSettings,
   getConfigDirectoryPath,
-} from '../../utils/credentials';
+} from '../../utils/settings';
 
 // Mock fs module
 vi.mock('fs', () => ({
@@ -29,7 +29,7 @@ vi.mock('os', () => ({
   platform: vi.fn(),
 }));
 
-describe('Credentials Utilities', () => {
+describe('Settings Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(os.homedir).mockReturnValue('/home/testuser');
@@ -45,7 +45,7 @@ describe('Credentials Utilities', () => {
 
       const configPath = getConfigDirectoryPath();
 
-      // credentials.ts uses ~/.config/ for macOS and Linux (no special macOS path)
+      // settings.ts uses ~/.config/ for macOS and Linux (no special macOS path)
       expect(configPath).toBe('/home/testuser/.config/firecrawl-cli');
     });
 
@@ -74,40 +74,38 @@ describe('Credentials Utilities', () => {
     });
   });
 
-  describe('loadCredentials', () => {
+  describe('loadSettings', () => {
     beforeEach(() => {
       vi.mocked(os.platform).mockReturnValue('darwin');
     });
 
-    it('should return null when credentials file does not exist', () => {
+    it('should return null when settings file does not exist', () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
-      const result = loadCredentials();
+      const result = loadSettings();
 
       expect(result).toBeNull();
     });
 
-    it('should return credentials when file exists and is valid', () => {
-      const mockCredentials = {
+    it('should return settings when file exists and is valid', () => {
+      const mockSettings = {
         apiKey: 'fc-test-api-key',
         apiUrl: 'https://api.firecrawl.dev',
       };
 
       vi.mocked(fs.existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFileSync).mockReturnValue(
-        JSON.stringify(mockCredentials)
-      );
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockSettings));
 
-      const result = loadCredentials();
+      const result = loadSettings();
 
-      expect(result).toEqual(mockCredentials);
+      expect(result).toEqual(mockSettings);
     });
 
     it('should return null when file is corrupted (invalid JSON)', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue('not valid json');
 
-      const result = loadCredentials();
+      const result = loadSettings();
 
       expect(result).toBeNull();
     });
@@ -118,13 +116,13 @@ describe('Credentials Utilities', () => {
         throw new Error('Permission denied');
       });
 
-      const result = loadCredentials();
+      const result = loadSettings();
 
       expect(result).toBeNull();
     });
   });
 
-  describe('saveCredentials', () => {
+  describe('saveSettings', () => {
     beforeEach(() => {
       vi.mocked(os.platform).mockReturnValue('darwin');
       vi.mocked(fs.existsSync).mockReturnValue(false);
@@ -133,7 +131,7 @@ describe('Credentials Utilities', () => {
     it('should create config directory if it does not exist', () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
-      saveCredentials({ apiKey: 'fc-test-key' });
+      saveSettings({ apiKey: 'fc-test-key' });
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(
         expect.stringContaining('firecrawl-cli'),
@@ -141,33 +139,33 @@ describe('Credentials Utilities', () => {
       );
     });
 
-    it('should save credentials to file', () => {
+    it('should save settings to file', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
 
-      saveCredentials({
+      saveSettings({
         apiKey: 'fc-test-key',
         apiUrl: 'https://api.firecrawl.dev',
       });
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('credentials.json'),
+        expect.stringContaining('settings.json'),
         expect.any(String),
         'utf-8'
       );
     });
 
-    it('should merge with existing credentials', () => {
-      const existingCredentials = {
+    it('should merge with existing settings', () => {
+      const existingSettings = {
         apiKey: 'fc-old-key',
         apiUrl: 'https://old-api.example.com',
       };
 
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.readFileSync).mockReturnValue(
-        JSON.stringify(existingCredentials)
+        JSON.stringify(existingSettings)
       );
 
-      saveCredentials({ apiKey: 'fc-new-key' });
+      saveSettings({ apiKey: 'fc-new-key' });
 
       // Check that writeFileSync was called with merged data
       expect(fs.writeFileSync).toHaveBeenCalled();
@@ -181,10 +179,10 @@ describe('Credentials Utilities', () => {
     it('should set secure file permissions', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
 
-      saveCredentials({ apiKey: 'fc-test-key' });
+      saveSettings({ apiKey: 'fc-test-key' });
 
       expect(fs.chmodSync).toHaveBeenCalledWith(
-        expect.stringContaining('credentials.json'),
+        expect.stringContaining('settings.json'),
         0o600
       );
     });
@@ -195,31 +193,31 @@ describe('Credentials Utilities', () => {
         throw new Error('Disk full');
       });
 
-      expect(() => saveCredentials({ apiKey: 'fc-test-key' })).toThrow(
-        'Failed to save credentials: Disk full'
+      expect(() => saveSettings({ apiKey: 'fc-test-key' })).toThrow(
+        'Failed to save settings: Disk full'
       );
     });
   });
 
-  describe('deleteCredentials', () => {
+  describe('deleteSettings', () => {
     beforeEach(() => {
       vi.mocked(os.platform).mockReturnValue('darwin');
     });
 
-    it('should delete credentials file when it exists', () => {
+    it('should delete settings file when it exists', () => {
       vi.mocked(fs.existsSync).mockReturnValue(true);
 
-      deleteCredentials();
+      deleteSettings();
 
       expect(fs.unlinkSync).toHaveBeenCalledWith(
-        expect.stringContaining('credentials.json')
+        expect.stringContaining('settings.json')
       );
     });
 
-    it('should not throw when credentials file does not exist', () => {
+    it('should not throw when settings file does not exist', () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
-      expect(() => deleteCredentials()).not.toThrow();
+      expect(() => deleteSettings()).not.toThrow();
       expect(fs.unlinkSync).not.toHaveBeenCalled();
     });
 
@@ -229,8 +227,8 @@ describe('Credentials Utilities', () => {
         throw new Error('Permission denied');
       });
 
-      expect(() => deleteCredentials()).toThrow(
-        'Failed to delete credentials: Permission denied'
+      expect(() => deleteSettings()).toThrow(
+        'Failed to delete settings: Permission denied'
       );
     });
   });

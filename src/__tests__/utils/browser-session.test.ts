@@ -4,7 +4,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
-import * as os from 'os';
 import {
   saveBrowserSession,
   loadBrowserSession,
@@ -21,17 +20,19 @@ vi.mock('fs', () => ({
   unlinkSync: vi.fn(),
 }));
 
-// Mock os module
-vi.mock('os', () => ({
-  homedir: vi.fn().mockReturnValue('/home/testuser'),
-  platform: vi.fn().mockReturnValue('linux'),
+// Mock config module to control getDataDir
+vi.mock('../../utils/config', () => ({
+  getDataDir: vi.fn(),
 }));
 
+import { getDataDir } from '../../utils/config';
+
 describe('Browser Session Utility', () => {
+  const TEST_DATA_DIR = '/home/testuser/firecrawl-data';
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(os.homedir).mockReturnValue('/home/testuser');
-    vi.mocked(os.platform).mockReturnValue('linux');
+    vi.mocked(getDataDir).mockReturnValue(TEST_DATA_DIR);
   });
 
   afterEach(() => {
@@ -39,7 +40,7 @@ describe('Browser Session Utility', () => {
   });
 
   describe('saveBrowserSession', () => {
-    it('should create config dir and save session', () => {
+    it('should create data dir and save session', () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
       const session = {
@@ -51,8 +52,8 @@ describe('Browser Session Utility', () => {
       saveBrowserSession(session);
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining('firecrawl-cli'),
-        expect.objectContaining({ recursive: true, mode: 0o700 })
+        TEST_DATA_DIR,
+        expect.objectContaining({ recursive: true })
       );
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
@@ -72,6 +73,32 @@ describe('Browser Session Utility', () => {
       });
 
       expect(fs.mkdirSync).not.toHaveBeenCalled();
+    });
+
+    it('should throw when dataDir is not configured', () => {
+      vi.mocked(getDataDir).mockReturnValue(undefined);
+
+      expect(() =>
+        saveBrowserSession({
+          id: 'session-789',
+          cdpUrl: 'wss://browser.firecrawl.dev/session-789',
+          createdAt: '2026-03-21T00:00:00Z',
+        })
+      ).toThrow('Data directory is not configured');
+    });
+
+    it('should save session file inside dataDir', () => {
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+
+      saveBrowserSession({
+        id: 'test',
+        cdpUrl: 'wss://test',
+        createdAt: '2026-03-21T00:00:00Z',
+      });
+
+      const writePath = vi.mocked(fs.writeFileSync).mock.calls[0][0] as string;
+      expect(writePath).toContain(TEST_DATA_DIR);
+      expect(writePath).toContain('browser-session.json');
     });
   });
 
@@ -118,6 +145,14 @@ describe('Browser Session Utility', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should return null when dataDir is not configured', () => {
+      vi.mocked(getDataDir).mockReturnValue(undefined);
+
+      const result = loadBrowserSession();
+
+      expect(result).toBeNull();
+    });
   });
 
   describe('clearBrowserSession', () => {
@@ -147,6 +182,14 @@ describe('Browser Session Utility', () => {
 
       expect(() => clearBrowserSession()).not.toThrow();
     });
+
+    it('should do nothing when dataDir is not configured', () => {
+      vi.mocked(getDataDir).mockReturnValue(undefined);
+
+      clearBrowserSession();
+
+      expect(fs.unlinkSync).not.toHaveBeenCalled();
+    });
   });
 
   describe('getSessionId', () => {
@@ -175,62 +218,6 @@ describe('Browser Session Utility', () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
       expect(() => getSessionId()).toThrow('No active browser session');
-    });
-  });
-
-  describe('Platform-specific paths', () => {
-    it('should use macOS path on darwin', () => {
-      vi.mocked(os.platform).mockReturnValue('darwin');
-      vi.mocked(os.homedir).mockReturnValue('/Users/testuser');
-      vi.mocked(fs.existsSync).mockReturnValue(false);
-
-      saveBrowserSession({
-        id: 'test',
-        cdpUrl: 'wss://test',
-        createdAt: '2026-03-21T00:00:00Z',
-      });
-
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('Library/Application Support/firecrawl-cli'),
-        expect.any(String),
-        'utf-8'
-      );
-    });
-
-    it('should use Windows path on win32', () => {
-      vi.mocked(os.platform).mockReturnValue('win32');
-      vi.mocked(os.homedir).mockReturnValue('C:\\Users\\testuser');
-      vi.mocked(fs.existsSync).mockReturnValue(false);
-
-      saveBrowserSession({
-        id: 'test',
-        cdpUrl: 'wss://test',
-        createdAt: '2026-03-21T00:00:00Z',
-      });
-
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('AppData'),
-        expect.any(String),
-        'utf-8'
-      );
-    });
-
-    it('should use Linux path on linux', () => {
-      vi.mocked(os.platform).mockReturnValue('linux');
-      vi.mocked(os.homedir).mockReturnValue('/home/testuser');
-      vi.mocked(fs.existsSync).mockReturnValue(false);
-
-      saveBrowserSession({
-        id: 'test',
-        cdpUrl: 'wss://test',
-        createdAt: '2026-03-21T00:00:00Z',
-      });
-
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('.config/firecrawl-cli'),
-        expect.any(String),
-        'utf-8'
-      );
     });
   });
 });

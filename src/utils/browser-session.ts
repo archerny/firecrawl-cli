@@ -1,11 +1,11 @@
 /**
  * Browser session persistence utility
- * Stores active browser session info in platform-specific config directory
+ * Stores active browser session info in the user-configured data directory
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
+import { getDataDir } from './config';
 
 export interface StoredBrowserSession {
   id: string;
@@ -14,41 +14,21 @@ export interface StoredBrowserSession {
 }
 
 /**
- * Get the platform-specific config directory
+ * Get the browser session file path inside the data directory.
+ * Returns null if dataDir is not configured.
  */
-function getConfigDir(): string {
-  const homeDir = os.homedir();
-  const platform = os.platform();
-
-  switch (platform) {
-    case 'darwin':
-      return path.join(
-        homeDir,
-        'Library',
-        'Application Support',
-        'firecrawl-cli'
-      );
-    case 'win32':
-      return path.join(homeDir, 'AppData', 'Roaming', 'firecrawl-cli');
-    default:
-      return path.join(homeDir, '.config', 'firecrawl-cli');
-  }
+function getSessionPath(): string | null {
+  const dataDir = getDataDir();
+  if (!dataDir) return null;
+  return path.join(path.resolve(dataDir), 'browser-session.json');
 }
 
 /**
- * Get the browser session file path
+ * Ensure the data directory exists
  */
-function getSessionPath(): string {
-  return path.join(getConfigDir(), 'browser-session.json');
-}
-
-/**
- * Ensure the config directory exists
- */
-function ensureConfigDir(): void {
-  const configDir = getConfigDir();
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
+function ensureDataDir(dir: string): void {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 }
 
@@ -56,8 +36,13 @@ function ensureConfigDir(): void {
  * Save active browser session to disk
  */
 export function saveBrowserSession(session: StoredBrowserSession): void {
-  ensureConfigDir();
   const sessionPath = getSessionPath();
+  if (!sessionPath) {
+    throw new Error(
+      'Data directory is not configured. Run "firecrawl config" to set it up.'
+    );
+  }
+  ensureDataDir(path.dirname(sessionPath));
   fs.writeFileSync(sessionPath, JSON.stringify(session, null, 2), 'utf-8');
 }
 
@@ -67,7 +52,7 @@ export function saveBrowserSession(session: StoredBrowserSession): void {
 export function loadBrowserSession(): StoredBrowserSession | null {
   try {
     const sessionPath = getSessionPath();
-    if (!fs.existsSync(sessionPath)) {
+    if (!sessionPath || !fs.existsSync(sessionPath)) {
       return null;
     }
     const data = fs.readFileSync(sessionPath, 'utf-8');
@@ -83,7 +68,7 @@ export function loadBrowserSession(): StoredBrowserSession | null {
 export function clearBrowserSession(): void {
   try {
     const sessionPath = getSessionPath();
-    if (fs.existsSync(sessionPath)) {
+    if (sessionPath && fs.existsSync(sessionPath)) {
       fs.unlinkSync(sessionPath);
     }
   } catch {

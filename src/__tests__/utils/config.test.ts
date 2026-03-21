@@ -11,12 +11,12 @@ import {
   validateConfig,
 } from '../../utils/config';
 import { getClient, resetClient } from '../../utils/client';
-import * as credentials from '../../utils/credentials';
+import * as settings from '../../utils/settings';
 
-// Mock credentials module
-vi.mock('../../utils/credentials', () => ({
-  loadCredentials: vi.fn(),
-  saveCredentials: vi.fn(),
+// Mock settings module
+vi.mock('../../utils/settings', () => ({
+  loadSettings: vi.fn(),
+  saveSettings: vi.fn(),
 }));
 
 describe('Config Fallback Priority', () => {
@@ -31,9 +31,10 @@ describe('Config Fallback Priority', () => {
     // Clear env vars
     delete process.env.FIRECRAWL_API_KEY;
     delete process.env.FIRECRAWL_API_URL;
+    delete process.env.FIRECRAWL_DATA_DIR;
 
-    // Mock loadCredentials to return null by default
-    vi.mocked(credentials.loadCredentials).mockReturnValue(null);
+    // Mock loadSettings to return null by default
+    vi.mocked(settings.loadSettings).mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -67,8 +68,8 @@ describe('Config Fallback Priority', () => {
       expect(config.apiUrl).toBe('https://env-api-url.com');
     });
 
-    it('should fallback to stored credentials when env vars are not set', () => {
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+    it('should fallback to stored settings when env vars are not set', () => {
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'stored-api-key',
         apiUrl: 'https://stored-api-url.com',
       });
@@ -80,9 +81,9 @@ describe('Config Fallback Priority', () => {
       expect(config.apiUrl).toBe('https://stored-api-url.com');
     });
 
-    it('should prioritize provided config > env vars > stored credentials', () => {
+    it('should prioritize provided config > env vars > stored settings', () => {
       process.env.FIRECRAWL_API_KEY = 'env-api-key';
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'stored-api-key',
       });
 
@@ -95,7 +96,7 @@ describe('Config Fallback Priority', () => {
       initializeConfig({});
       expect(getConfig().apiKey).toBe('env-api-key');
 
-      // Reset and test stored credentials fallback
+      // Reset and test stored settings fallback
       resetConfig();
       delete process.env.FIRECRAWL_API_KEY;
       initializeConfig({});
@@ -109,6 +110,7 @@ describe('Config Fallback Priority', () => {
       initializeConfig({
         apiKey: 'global-api-key',
         apiUrl: 'https://global-url.com',
+        dataDir: '/tmp/firecrawl-data',
       });
     });
 
@@ -133,6 +135,7 @@ describe('Config Fallback Priority', () => {
       initializeConfig({
         apiKey: 'global-api-key',
         apiUrl: 'https://global-url.com',
+        dataDir: '/tmp/firecrawl-data',
         timeoutMs: 30000,
       });
 
@@ -148,6 +151,7 @@ describe('Config Fallback Priority', () => {
       initializeConfig({
         apiKey: 'global-api-key',
         apiUrl: 'https://global-url.com',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       getClient({ apiKey: undefined });
@@ -159,16 +163,18 @@ describe('Config Fallback Priority', () => {
   });
 
   describe('Combined fallback chain', () => {
-    it('should follow: options > global config > env vars > stored credentials', () => {
-      // Set up stored credentials
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+    it('should follow: options > global config > env vars > stored settings', () => {
+      // Set up stored settings
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'stored-api-key',
         apiUrl: 'https://stored-url.com',
+        dataDir: '/tmp/stored-data',
       });
 
       // Set up env vars
       process.env.FIRECRAWL_API_KEY = 'env-api-key';
       process.env.FIRECRAWL_API_URL = 'https://env-url.com';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/env-data';
 
       // Initialize with env vars (should use env > stored)
       initializeConfig({});
@@ -187,6 +193,7 @@ describe('Config Fallback Priority', () => {
       resetConfig();
       delete process.env.FIRECRAWL_API_KEY;
       delete process.env.FIRECRAWL_API_URL;
+      delete process.env.FIRECRAWL_DATA_DIR;
       initializeConfig({});
       expect(getConfig().apiKey).toBe('stored-api-key');
     });
@@ -194,6 +201,7 @@ describe('Config Fallback Priority', () => {
     it('should update global config when getClient is called with options', () => {
       process.env.FIRECRAWL_API_KEY = 'env-api-key';
       process.env.FIRECRAWL_API_URL = 'https://env-url.com';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/env-data';
       initializeConfig({});
 
       // Initially should use env var
@@ -242,19 +250,31 @@ describe('Config Fallback Priority', () => {
 
   describe('validateConfig', () => {
     it('should require API key', () => {
-      initializeConfig({ apiUrl: 'https://example.com' });
+      initializeConfig({
+        apiUrl: 'https://example.com',
+        dataDir: '/tmp/data',
+      });
       expect(() => validateConfig()).toThrow('API key is required');
     });
 
     it('should require API URL', () => {
-      initializeConfig({ apiKey: 'test-key' });
+      initializeConfig({ apiKey: 'test-key', dataDir: '/tmp/data' });
       expect(() => validateConfig()).toThrow('API URL is required');
     });
 
-    it('should not throw when both API key and URL are provided', () => {
+    it('should require data directory', () => {
+      initializeConfig({
+        apiKey: 'test-key',
+        apiUrl: 'https://example.com',
+      });
+      expect(() => validateConfig()).toThrow('Data directory is required');
+    });
+
+    it('should not throw when all three are provided', () => {
       initializeConfig({
         apiUrl: 'https://example.com',
         apiKey: 'test-key',
+        dataDir: '/tmp/data',
       });
       expect(() => validateConfig()).not.toThrow();
     });
@@ -263,6 +283,7 @@ describe('Config Fallback Priority', () => {
       initializeConfig({
         apiUrl: 'http://localhost:3002',
         apiKey: 'test-key',
+        dataDir: '/tmp/data',
       });
       expect(() => validateConfig()).not.toThrow();
     });

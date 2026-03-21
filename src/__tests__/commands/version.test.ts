@@ -5,12 +5,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { handleVersionCommand } from '../../commands/version';
 import { initializeConfig, resetConfig } from '../../utils/config';
-import * as credentials from '../../utils/credentials';
+import * as settings from '../../utils/settings';
 
-// Mock credentials module
-vi.mock('../../utils/credentials', () => ({
-  loadCredentials: vi.fn(),
-  saveCredentials: vi.fn(),
+// Mock settings module
+vi.mock('../../utils/settings', () => ({
+  loadSettings: vi.fn(),
+  saveSettings: vi.fn(),
   getConfigDirectoryPath: vi.fn().mockReturnValue('/mock/config/path'),
 }));
 
@@ -22,7 +22,7 @@ describe('Version Command', () => {
     vi.clearAllMocks();
     delete process.env.FIRECRAWL_API_KEY;
     delete process.env.FIRECRAWL_API_URL;
-    vi.mocked(credentials.loadCredentials).mockReturnValue(null);
+    vi.mocked(settings.loadSettings).mockReturnValue(null);
     consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
@@ -49,10 +49,11 @@ describe('Version Command', () => {
       expect(calls).toContainEqual(expect.stringContaining('authenticated:'));
     });
 
-    it('should show authenticated: true when credentials are set', () => {
+    it('should show authenticated: true when settings are set', () => {
       initializeConfig({
         apiKey: 'fc-test-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
 
       handleVersionCommand({ authStatus: true });
@@ -60,7 +61,7 @@ describe('Version Command', () => {
       expect(consoleSpy).toHaveBeenCalledWith('authenticated: true');
     });
 
-    it('should show authenticated: false when no credentials', () => {
+    it('should show authenticated: false when no settings', () => {
       initializeConfig({});
 
       handleVersionCommand({ authStatus: true });

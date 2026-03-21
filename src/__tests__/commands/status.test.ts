@@ -5,12 +5,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getStatus } from '../../commands/status';
 import { initializeConfig, resetConfig } from '../../utils/config';
-import * as credentials from '../../utils/credentials';
+import * as settings from '../../utils/settings';
 
-// Mock credentials module
-vi.mock('../../utils/credentials', () => ({
-  loadCredentials: vi.fn(),
-  saveCredentials: vi.fn(),
+// Mock settings module
+vi.mock('../../utils/settings', () => ({
+  loadSettings: vi.fn(),
+  saveSettings: vi.fn(),
   getConfigDirectoryPath: vi.fn().mockReturnValue('/mock/config/path'),
 }));
 
@@ -26,7 +26,8 @@ describe('Status Command', () => {
     vi.clearAllMocks();
     delete process.env.FIRECRAWL_API_KEY;
     delete process.env.FIRECRAWL_API_URL;
-    vi.mocked(credentials.loadCredentials).mockReturnValue(null);
+    delete process.env.FIRECRAWL_DATA_DIR;
+    vi.mocked(settings.loadSettings).mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -34,7 +35,7 @@ describe('Status Command', () => {
   });
 
   describe('getStatus', () => {
-    it('should return unauthenticated status when no credentials', async () => {
+    it('should return unauthenticated status when no settings', async () => {
       initializeConfig({});
 
       const status = await getStatus();
@@ -48,6 +49,7 @@ describe('Status Command', () => {
     it('should detect env auth source', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-env-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({
@@ -67,9 +69,10 @@ describe('Status Command', () => {
     });
 
     it('should detect stored auth source', async () => {
-      vi.mocked(credentials.loadCredentials).mockReturnValue({
+      vi.mocked(settings.loadSettings).mockReturnValue({
         apiKey: 'fc-stored-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/firecrawl-data',
       });
       initializeConfig({});
 
@@ -92,6 +95,7 @@ describe('Status Command', () => {
     it('should include concurrency info when API returns it', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({
@@ -115,6 +119,7 @@ describe('Status Command', () => {
     it('should handle zero active jobs', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({
@@ -137,6 +142,7 @@ describe('Status Command', () => {
     it('should set error when API call fails', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({
@@ -156,6 +162,7 @@ describe('Status Command', () => {
     it('should handle fetch network error', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockRejectedValue(new Error('Network error'));
@@ -169,6 +176,7 @@ describe('Status Command', () => {
     it('should call correct queue-status endpoint', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-my-key';
       process.env.FIRECRAWL_API_URL = 'https://custom.api.dev/';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({
@@ -192,6 +200,7 @@ describe('Status Command', () => {
     it('should handle API response with success: false', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({
@@ -210,6 +219,7 @@ describe('Status Command', () => {
     it('should handle HTTP error without parseable JSON body', async () => {
       process.env.FIRECRAWL_API_KEY = 'fc-key';
       process.env.FIRECRAWL_API_URL = 'https://api.firecrawl.dev';
+      process.env.FIRECRAWL_DATA_DIR = '/tmp/firecrawl-data';
       initializeConfig({});
 
       mockFetch.mockResolvedValue({

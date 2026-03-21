@@ -7,8 +7,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import packageJson from '../../package.json';
 import { isAuthenticated } from '../utils/auth';
-import { getConfig, validateConfig } from '../utils/config';
-import { loadCredentials } from '../utils/credentials';
+import { getConfig, getDataDir, validateConfig } from '../utils/config';
+import { loadSettings } from '../utils/settings';
 
 type AuthSource = 'env' | 'stored' | 'none';
 
@@ -33,10 +33,10 @@ interface StatusResult {
 }
 
 interface LocalStatus {
-  gitignoreExists: boolean;
-  gitignoreHasFirecrawl: boolean;
-  firecrawlDirExists: boolean;
-  firecrawlFileCount: number;
+  dataDirConfigured: boolean;
+  dataDirPath?: string;
+  dataDirExists: boolean;
+  dataDirFileCount: number;
 }
 
 /**
@@ -46,7 +46,7 @@ function getAuthSource(): AuthSource {
   if (process.env.FIRECRAWL_API_KEY) {
     return 'env';
   }
-  const stored = loadCredentials();
+  const stored = loadSettings();
   if (stored?.apiKey) {
     return 'stored';
   }
@@ -129,31 +129,22 @@ function formatNumber(num: number): string {
 }
 
 /**
- * Check local repo status for .gitignore and .firecrawl
+ * Check data directory status
  */
-async function getLocalStatus(cwd: string): Promise<LocalStatus> {
-  const gitignorePath = path.join(cwd, '.gitignore');
-  let gitignoreExists = false;
-  let gitignoreHasFirecrawl = false;
+async function getLocalStatus(): Promise<LocalStatus> {
+  const dataDir = getDataDir();
 
-  try {
-    const content = await fs.readFile(gitignorePath, 'utf8');
-    gitignoreExists = true;
-    const lines = content.split(/\r?\n/);
-    gitignoreHasFirecrawl = lines.some((line) => {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) {
-        return false;
-      }
-      return /^\/?\.firecrawl(?:\/|$)/.test(trimmed);
-    });
-  } catch {
-    gitignoreExists = false;
+  if (!dataDir) {
+    return {
+      dataDirConfigured: false,
+      dataDirExists: false,
+      dataDirFileCount: 0,
+    };
   }
 
-  const firecrawlDir = path.join(cwd, '.firecrawl');
-  let firecrawlDirExists = false;
-  let firecrawlFileCount = 0;
+  const resolvedDir = path.resolve(dataDir);
+  let dataDirExists = false;
+  let dataDirFileCount = 0;
 
   async function countFiles(dir: string): Promise<number> {
     let count = 0;
@@ -175,21 +166,44 @@ async function getLocalStatus(cwd: string): Promise<LocalStatus> {
   }
 
   try {
-    const stat = await fs.stat(firecrawlDir);
+    const stat = await fs.stat(resolvedDir);
     if (stat.isDirectory()) {
-      firecrawlDirExists = true;
-      firecrawlFileCount = await countFiles(firecrawlDir);
+      dataDirExists = true;
+      dataDirFileCount = await countFiles(resolvedDir);
     }
   } catch {
-    firecrawlDirExists = false;
+    dataDirExists = false;
   }
 
   return {
-    gitignoreExists,
-    gitignoreHasFirecrawl,
-    firecrawlDirExists,
-    firecrawlFileCount,
+    dataDirConfigured: true,
+    dataDirPath: resolvedDir,
+    dataDirExists,
+    dataDirFileCount,
   };
+}
+
+/**
+ * Display data directory status
+ */
+function printDataDirStatus(
+  localStatus: LocalStatus,
+  dim: string,
+  reset: string
+): void {
+  if (!localStatus.dataDirConfigured) {
+    console.log(
+      `  ${dim}Data dir:${reset} not configured ${dim}- run 'firecrawl config' to set${reset}`
+    );
+  } else if (localStatus.dataDirExists) {
+    console.log(
+      `  ${dim}Data dir:${reset} ${localStatus.dataDirPath} ${dim}- ${formatNumber(localStatus.dataDirFileCount)} files${reset}`
+    );
+  } else {
+    console.log(
+      `  ${dim}Data dir:${reset} ${localStatus.dataDirPath} ${dim}- not yet created${reset}`
+    );
+  }
 }
 
 /**
@@ -204,7 +218,7 @@ export async function handleStatusCommand(): Promise<void> {
   const red = '\x1b[31m';
 
   const status = await getStatus();
-  const localStatus = await getLocalStatus(process.cwd());
+  const localStatus = await getLocalStatus();
 
   // Header
   console.log('');
@@ -217,34 +231,14 @@ export async function handleStatusCommand(): Promise<void> {
   if (status.authenticated) {
     const sourceLabel =
       status.authSource === 'env'
-        ? 'via FIRECRAWL_API_KEY'
-        : 'via stored credentials';
-    console.log(
-      `  ${green}●${reset} Authenticated ${dim}${sourceLabel}${reset}`
-    );
+        ? 'via environment variables'
+        : 'via stored settings';
+    console.log(`  ${green}●${reset} Configured ${dim}${sourceLabel}${reset}`);
   } else {
-    console.log(`  ${red}●${reset} Not authenticated`);
+    console.log(`  ${red}●${reset} Not configured`);
     console.log(`  ${dim}Run 'firecrawl config' to configure${reset}`);
     console.log('');
-    if (localStatus.firecrawlDirExists) {
-      console.log(
-        `  ${dim}.firecrawl:${reset} present ${dim}- ${formatNumber(localStatus.firecrawlFileCount)} sites${reset}`
-      );
-    } else {
-      console.log(
-        `  ${dim}.firecrawl:${reset} not found ${dim}- no local cache${reset}`
-      );
-    }
-    if (localStatus.gitignoreExists) {
-      const ignoredLabel = localStatus.gitignoreHasFirecrawl ? 'yes' : 'no';
-      console.log(
-        `  ${dim}.gitignore:${reset} present ${dim}- .firecrawl ignored: ${ignoredLabel}${reset}`
-      );
-    } else {
-      console.log(
-        `  ${dim}.gitignore:${reset} missing ${dim}- add .firecrawl/ to ignore cache${reset}`
-      );
-    }
+    printDataDirStatus(localStatus, dim, reset);
     console.log('');
     return;
   }
@@ -255,25 +249,7 @@ export async function handleStatusCommand(): Promise<void> {
       `  ${dim}Could not fetch account info: ${status.error}${reset}`
     );
     console.log('');
-    if (localStatus.firecrawlDirExists) {
-      console.log(
-        `  ${dim}.firecrawl:${reset} present ${dim}- ${formatNumber(localStatus.firecrawlFileCount)} sites${reset}`
-      );
-    } else {
-      console.log(
-        `  ${dim}.firecrawl:${reset} not found ${dim}- no local cache${reset}`
-      );
-    }
-    if (localStatus.gitignoreExists) {
-      const ignoredLabel = localStatus.gitignoreHasFirecrawl ? 'yes' : 'no';
-      console.log(
-        `  ${dim}.gitignore:${reset} present ${dim}- .firecrawl ignored: ${ignoredLabel}${reset}`
-      );
-    } else {
-      console.log(
-        `  ${dim}.gitignore:${reset} missing ${dim}- add .firecrawl/ to ignore cache${reset}`
-      );
-    }
+    printDataDirStatus(localStatus, dim, reset);
     console.log('');
     return;
   }
@@ -286,25 +262,7 @@ export async function handleStatusCommand(): Promise<void> {
     );
   }
 
-  if (localStatus.firecrawlDirExists) {
-    console.log(
-      `  ${dim}.firecrawl:${reset} present ${dim}- ${formatNumber(localStatus.firecrawlFileCount)} sites${reset}`
-    );
-  } else {
-    console.log(
-      `  ${dim}.firecrawl:${reset} not found ${dim}- no local cache${reset}`
-    );
-  }
-  if (localStatus.gitignoreExists) {
-    const ignoredLabel = localStatus.gitignoreHasFirecrawl ? 'yes' : 'no';
-    console.log(
-      `  ${dim}.gitignore:${reset} present ${dim}- .firecrawl ignored: ${ignoredLabel}${reset}`
-    );
-  } else {
-    console.log(
-      `  ${dim}.gitignore:${reset} missing ${dim}- add .firecrawl/ to ignore cache${reset}`
-    );
-  }
+  printDataDirStatus(localStatus, dim, reset);
 
   console.log('');
 }

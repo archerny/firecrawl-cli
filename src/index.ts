@@ -27,11 +27,6 @@ import {
 } from './commands/browser';
 import { handleVersionCommand } from './commands/version';
 
-import {
-  handleInitCommand,
-  scaffoldTemplate,
-  findTemplate,
-} from './commands/init';
 import { handleStatusCommand } from './commands/status';
 import { isUrl, normalizeUrl } from './utils/url';
 import { parseScrapeOptions } from './utils/options';
@@ -92,7 +87,7 @@ program
 function createScrapeCommand(): Command {
   const scrapeCmd = new Command('scrape')
     .description(
-      'Scrape one or more URLs. Multiple URLs are scraped concurrently and saved to .firecrawl/'
+      'Scrape one or more URLs. Multiple URLs are scraped concurrently and saved to the configured data directory'
     )
     .argument('[urls...]', 'URL(s) to scrape')
     .option(
@@ -214,7 +209,7 @@ program.addCommand(createScrapeCommand());
 function createDownloadCommand(): Command {
   const downloadCmd = new Command('download')
     .description(
-      'Download a site into .firecrawl/ as nested directories. Maps the site first to discover pages, then scrapes them.'
+      'Download a site into the configured data directory as nested directories. Maps the site first to discover pages, then scrapes them.'
     )
     .argument('<url>', 'URL of the site to download')
     .option('--limit <number>', 'Max pages to download', parseInt)
@@ -1016,16 +1011,18 @@ program.addCommand(createBrowserCommand());
 
 program
   .command('config')
-  .description('Configure Firecrawl (login if not authenticated)')
+  .description('Configure Firecrawl (login if not configured)')
   .option(
     '-k, --api-key <key>',
     'Provide API key directly (skips interactive flow)'
   )
   .option('--api-url <url>', 'API URL')
+  .option('--data-dir <path>', 'Directory for storing scraped data')
   .action(async (options) => {
     await configure({
       apiKey: options.apiKey,
       apiUrl: options.apiUrl,
+      dataDir: options.dataDir,
     });
   });
 
@@ -1034,28 +1031,6 @@ program
   .description('View current configuration and authentication status')
   .action(async () => {
     await viewConfig();
-  });
-
-program
-  .command('init')
-  .description('Set up Firecrawl: authenticate and scaffold a template')
-  .argument(
-    '[template]',
-    'Template to scaffold (e.g. browser-nextjs, scrape-express)'
-  )
-  .option('-y, --yes', 'Run init non-interactively')
-  .option(
-    '-k, --api-key <key>',
-    'Authenticate with this API key (skips interactive login)'
-  )
-  .option('--skip-auth', 'Skip authentication')
-  .action(async (template, options) => {
-    await handleInitCommand({
-      template,
-      yes: options.yes,
-      apiKey: options.apiKey,
-      skipAuth: options.skipAuth,
-    });
   });
 
 program
@@ -1106,22 +1081,6 @@ async function main() {
     // Authenticated - show banner and help
     printBanner();
     program.outputHelp();
-    return;
-  }
-
-  // Shorthand: `firecrawl -y` → `firecrawl init -y`
-  if (
-    args.length >= 1 &&
-    (args[0] === '-y' || args[0] === '--yes') &&
-    args.length <= 1
-  ) {
-    await handleInitCommand({ yes: true });
-    return;
-  }
-
-  // Check if first argument is a template name
-  if (!args[0].startsWith('-') && findTemplate(args[0])) {
-    await scaffoldTemplate(args[0]);
     return;
   }
 

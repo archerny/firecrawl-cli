@@ -5,12 +5,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getClient, resetClient } from '../../utils/client';
 import { initializeConfig, resetConfig } from '../../utils/config';
-import * as credentials from '../../utils/credentials';
+import * as settings from '../../utils/settings';
 
-// Mock credentials module
-vi.mock('../../utils/credentials', () => ({
-  loadCredentials: vi.fn(),
-  saveCredentials: vi.fn(),
+// Mock settings module
+vi.mock('../../utils/settings', () => ({
+  loadSettings: vi.fn(),
+  saveSettings: vi.fn(),
   getConfigDirectoryPath: vi.fn().mockReturnValue('/mock/config/path'),
 }));
 
@@ -38,7 +38,8 @@ describe('Client Utility', () => {
     constructorCalls.length = 0;
     delete process.env.FIRECRAWL_API_KEY;
     delete process.env.FIRECRAWL_API_URL;
-    vi.mocked(credentials.loadCredentials).mockReturnValue(null);
+    delete process.env.FIRECRAWL_DATA_DIR;
+    vi.mocked(settings.loadSettings).mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -51,6 +52,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-test-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client = getClient();
@@ -68,6 +70,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-test-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client1 = getClient();
@@ -80,6 +83,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-global-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client1 = getClient();
@@ -96,6 +100,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-initial-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       getClient({ apiKey: 'fc-updated-key' });
@@ -113,15 +118,25 @@ describe('Client Utility', () => {
     });
 
     it('should throw when apiUrl is missing', () => {
-      initializeConfig({ apiKey: 'fc-key' });
+      initializeConfig({ apiKey: 'fc-key', dataDir: '/tmp/data' });
 
       expect(() => getClient()).toThrow('API URL is required');
+    });
+
+    it('should throw when dataDir is missing', () => {
+      initializeConfig({
+        apiKey: 'fc-key',
+        apiUrl: 'https://api.firecrawl.dev',
+      });
+
+      expect(() => getClient()).toThrow('Data directory is required');
     });
 
     it('should pass timeoutMs option', () => {
       initializeConfig({
         apiKey: 'fc-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client = getClient({ timeoutMs: 30000 });
@@ -133,6 +148,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client = getClient({ maxRetries: 5 });
@@ -144,6 +160,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client = getClient({ backoffFactor: 2 });
@@ -155,6 +172,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-key',
         apiUrl: 'https://global.api.dev',
+        dataDir: '/tmp/data',
       });
 
       const client = getClient({ apiUrl: 'https://override.api.dev' });
@@ -168,6 +186,7 @@ describe('Client Utility', () => {
       initializeConfig({
         apiKey: 'fc-key',
         apiUrl: 'https://api.firecrawl.dev',
+        dataDir: '/tmp/data',
       });
 
       const client1 = getClient();

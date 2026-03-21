@@ -1,15 +1,16 @@
 /**
- * OS-level credential storage utility
- * Stores credentials in platform-specific application data directories
+ * Persistent settings storage utility
+ * Stores application settings (API key, API URL, data directory) in platform-specific config directories
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-export interface StoredCredentials {
+export interface StoredSettings {
   apiKey?: string;
   apiUrl?: string;
+  dataDir?: string;
 }
 
 /**
@@ -28,10 +29,10 @@ function getConfigDir(): string {
 }
 
 /**
- * Get the credentials file path
+ * Get the settings file path
  */
-function getCredentialsPath(): string {
-  return path.join(getConfigDir(), 'credentials.json');
+function getSettingsPath(): string {
+  return path.join(getConfigDir(), 'settings.json');
 }
 
 /**
@@ -56,18 +57,18 @@ function setSecurePermissions(filePath: string): void {
 }
 
 /**
- * Load credentials from OS storage
+ * Load settings from OS storage
  */
-export function loadCredentials(): StoredCredentials | null {
+export function loadSettings(): StoredSettings | null {
   try {
-    const credentialsPath = getCredentialsPath();
-    if (!fs.existsSync(credentialsPath)) {
+    const settingsPath = getSettingsPath();
+    if (!fs.existsSync(settingsPath)) {
       return null;
     }
 
-    const data = fs.readFileSync(credentialsPath, 'utf-8');
-    const credentials = JSON.parse(data) as StoredCredentials;
-    return credentials;
+    const data = fs.readFileSync(settingsPath, 'utf-8');
+    const settings = JSON.parse(data) as StoredSettings;
+    return settings;
   } catch (error) {
     // If file is corrupted or unreadable, return null
     return null;
@@ -75,44 +76,44 @@ export function loadCredentials(): StoredCredentials | null {
 }
 
 /**
- * Save credentials to OS storage
+ * Save settings to OS storage
  */
-export function saveCredentials(credentials: StoredCredentials): void {
+export function saveSettings(settings: StoredSettings): void {
   try {
     ensureConfigDir();
-    const credentialsPath = getCredentialsPath();
+    const settingsPath = getSettingsPath();
 
-    // Read existing credentials and merge
-    const existing = loadCredentials();
-    const merged: StoredCredentials = {
+    // Read existing settings and merge
+    const existing = loadSettings();
+    const merged: StoredSettings = {
       ...existing,
-      ...credentials,
+      ...settings,
     };
 
     // Write to file
-    fs.writeFileSync(credentialsPath, JSON.stringify(merged, null, 2), 'utf-8');
+    fs.writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
 
     // Set secure permissions
-    setSecurePermissions(credentialsPath);
+    setSecurePermissions(settingsPath);
   } catch (error) {
     throw new Error(
-      `Failed to save credentials: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to save settings: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
 
 /**
- * Delete stored credentials
+ * Delete stored settings
  */
-export function deleteCredentials(): void {
+export function deleteSettings(): void {
   try {
-    const credentialsPath = getCredentialsPath();
-    if (fs.existsSync(credentialsPath)) {
-      fs.unlinkSync(credentialsPath);
+    const settingsPath = getSettingsPath();
+    if (fs.existsSync(settingsPath)) {
+      fs.unlinkSync(settingsPath);
     }
   } catch (error) {
     throw new Error(
-      `Failed to delete credentials: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to delete settings: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
