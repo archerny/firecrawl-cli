@@ -44,7 +44,7 @@ describe('Version Command', () => {
 
       handleVersionCommand({ authStatus: true });
 
-      const calls = consoleSpy.mock.calls.map((c) => c[0]);
+      const calls = consoleSpy.mock.calls.map((c: unknown[]) => c[0]);
       expect(calls).toContainEqual(expect.stringContaining('version:'));
       expect(calls).toContainEqual(expect.stringContaining('authenticated:'));
     });
@@ -72,7 +72,7 @@ describe('Version Command', () => {
     it('should not output auth status when authStatus is not set', () => {
       handleVersionCommand();
 
-      const calls = consoleSpy.mock.calls.map((c) => c[0]);
+      const calls = consoleSpy.mock.calls.map((c: unknown[]) => c[0]);
       expect(calls).not.toContainEqual(
         expect.stringContaining('authenticated:')
       );
@@ -81,7 +81,7 @@ describe('Version Command', () => {
     it('should not output auth status when options is empty', () => {
       handleVersionCommand({});
 
-      const calls = consoleSpy.mock.calls.map((c) => c[0]);
+      const calls = consoleSpy.mock.calls.map((c: unknown[]) => c[0]);
       expect(calls).not.toContainEqual(
         expect.stringContaining('authenticated:')
       );
