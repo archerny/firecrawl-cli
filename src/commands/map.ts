@@ -15,9 +15,7 @@ export async function executeMap(options: MapOptions): Promise<MapResult> {
     const { urlOrJobId } = options;
 
     // Build map options
-    const mapOptions: any = {
-      integration: 'cli',
-    };
+    const mapOptions: any = {};
 
     if (options.limit !== undefined) {
       mapOptions.limit = options.limit;

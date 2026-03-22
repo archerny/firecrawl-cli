@@ -84,7 +84,6 @@ export async function executeScrape(
 
   const scrapeParams: Record<string, unknown> = {
     formats,
-    integration: 'cli',
   };
 
   if (options.onlyMainContent !== undefined) {
