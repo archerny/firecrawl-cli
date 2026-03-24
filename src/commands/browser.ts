@@ -76,8 +76,7 @@ export async function handleBrowserLaunch(
         name: string;
         saveChanges?: boolean;
       };
-      integration?: string;
-    } = { integration: 'cli' };
+    } = {};
     if (options.ttl !== undefined) args.ttl = options.ttl;
     if (options.ttlInactivity !== undefined)
       args.activityTtl = options.ttlInactivity;
@@ -296,8 +295,7 @@ export async function handleBrowserQuickExecute(
         name: string;
         saveChanges?: boolean;
       };
-      integration?: string;
-    } = { integration: 'cli' };
+    } = {};
     if (options.profile) {
       launchArgs.profile = {
         name: options.profile,

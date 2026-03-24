@@ -197,10 +197,8 @@ export async function executeAgent(
       model?: 'spark-1-pro' | 'spark-1-mini';
       pollInterval?: number;
       timeout?: number;
-      integration?: string;
     } = {
       prompt,
-      integration: 'cli',
     };
 
     if (options.urls && options.urls.length > 0) {

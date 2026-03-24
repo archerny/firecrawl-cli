@@ -97,7 +97,6 @@ describe('executeAgent', () => {
         expect.objectContaining({
           prompt: 'Extract data',
           urls: ['https://example.com', 'https://test.com'],
-          integration: 'cli',
         })
       );
     });
@@ -117,7 +116,6 @@ describe('executeAgent', () => {
         expect.objectContaining({
           prompt: 'Extract data',
           model: 'spark-1-pro',
-          integration: 'cli',
         })
       );
     });
