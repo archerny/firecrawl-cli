@@ -11,7 +11,8 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "local": "node dist/index.js",
-    "clean": "rm -rf dist",
+    "bundle": "tsup",
+    "clean": "rm -rf dist bundle",
     "prepare": "husky",
     "format": "prettier --write \"src/**/*.{ts,json}\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json}\" \"*.{json,md}\"",
@@ -57,6 +58,7 @@
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.0.0",
+    "tsup": "^8.0.0",
     "vitest": "^4.0.0"
   },
   "dependencies": {
