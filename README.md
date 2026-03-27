@@ -6,54 +6,48 @@ Command-line interface for Firecrawl. Scrape, crawl, and extract data from any w
 
 ## Installation
 
-This project is not published to npm. Build and use locally:
+This project is not published to npm. Build a self-contained single-file script and use it directly:
 
 ```bash
 # Clone the repository
 git clone https://github.com/archerny/firecrawl-cli.git
 cd firecrawl-cli
 
-# Install dependencies and build
+# Install dependencies and bundle
 pnpm install
-pnpm build
+pnpm bundle
 
-# Global link (optional, allows using the firecrawl command directly)
-npm link
+# The output is bundle/index.cjs — a single file with zero dependencies.
+# Copy it anywhere and run with Node.js:
+node bundle/index.cjs --help
 ```
 
 ## Quick Start
 
-Just run a command - the CLI will prompt you to configure if needed:
+Configure first, then scrape:
 
 ```bash
-firecrawl https://example.com
+# Set up configuration (all three options required)
+node bundle/index.cjs config --api-url https://api.firecrawl.dev --api-key your-api-key --data-dir ~/firecrawl-data
+
+# Or use environment variables
+export FIRECRAWL_API_URL=https://api.firecrawl.dev
+export FIRECRAWL_API_KEY=your-api-key
+export FIRECRAWL_DATA_DIR=~/firecrawl-data
+
+# Scrape a URL
+node bundle/index.cjs https://example.com
 ```
 
 ## Configuration
 
-On first run, you'll be prompted to configure three required settings:
-
-```
-  🔥 firecrawl cli
-  Turn websites into LLM-ready data
-
-Welcome! To get started, configure your Firecrawl settings.
-
-Tip: You can also set FIRECRAWL_API_URL, FIRECRAWL_API_KEY, and FIRECRAWL_DATA_DIR environment variables
-
-Enter your API URL:
-Enter your API key:
-Enter data directory (where scraped data will be stored):
-```
+Three settings are required: **API URL**, **API Key**, and **Data Directory**. If any are missing, the CLI will print an error with instructions and exit.
 
 ### Configuration Methods
 
 ```bash
-# Interactive (prompts automatically when needed)
-firecrawl
-
-# Direct configuration (all three required)
-firecrawl config --api-url https://api.firecrawl.dev --api-key your-api-key --data-dir ~/firecrawl-data
+# Direct configuration (saves to settings file)
+node bundle/index.cjs config --api-url https://api.firecrawl.dev --api-key your-api-key --data-dir ~/firecrawl-data
 
 # Environment variables
 export FIRECRAWL_API_URL=https://api.firecrawl.dev
@@ -61,7 +55,7 @@ export FIRECRAWL_API_KEY=your-api-key
 export FIRECRAWL_DATA_DIR=~/firecrawl-data
 
 # Per-command overrides
-firecrawl scrape https://example.com --api-url https://api.firecrawl.dev --api-key your-api-key
+node bundle/index.cjs scrape https://example.com --api-url https://api.firecrawl.dev --api-key your-api-key
 ```
 
 ### Configuration Priority
@@ -69,7 +63,7 @@ firecrawl scrape https://example.com --api-url https://api.firecrawl.dev --api-k
 Settings are resolved in the following order (highest to lowest):
 
 1. Command-line flags (`--api-key`, `--api-url`)
-2. Global config (set via `firecrawl config`)
+2. Global config (set via `node bundle/index.cjs config`)
 3. Environment variables (`FIRECRAWL_API_KEY`, `FIRECRAWL_API_URL`, `FIRECRAWL_DATA_DIR`)
 4. Stored settings (`~/.config/firecrawl-cli/settings.json`)
 
@@ -79,13 +73,13 @@ For self-hosted Firecrawl instances or local development:
 
 ```bash
 # Use a local Firecrawl instance
-firecrawl config --api-url http://localhost:3002 --api-key your-local-key --data-dir ./data
+node bundle/index.cjs config --api-url http://localhost:3002 --api-key your-local-key --data-dir ./data
 
 # Or set via environment variables
 export FIRECRAWL_API_URL=http://localhost:3002
 export FIRECRAWL_API_KEY=your-local-key
 export FIRECRAWL_DATA_DIR=./data
-firecrawl scrape https://example.com
+node bundle/index.cjs scrape https://example.com
 ```
 
 ### Storage Paths
@@ -108,25 +102,25 @@ Extract content from any webpage. Pass multiple URLs to scrape them concurrently
 
 ```bash
 # Basic usage (outputs markdown)
-firecrawl https://example.com
-firecrawl scrape https://example.com
+node bundle/index.cjs https://example.com
+node bundle/index.cjs scrape https://example.com
 
 # Get raw HTML
-firecrawl https://example.com --html
-firecrawl https://example.com -H
+node bundle/index.cjs https://example.com --html
+node bundle/index.cjs https://example.com -H
 
 # Multiple formats (outputs JSON)
-firecrawl https://example.com --format markdown,links,images
+node bundle/index.cjs https://example.com --format markdown,links,images
 
 # Save to file
-firecrawl https://example.com -o output.md
-firecrawl https://example.com --format json -o data.json --pretty
+node bundle/index.cjs https://example.com -o output.md
+node bundle/index.cjs https://example.com --format json -o data.json --pretty
 
 # Multiple URLs (scraped concurrently, each saved to data directory)
-firecrawl scrape https://example.com https://example.com/blog
+node bundle/index.cjs scrape https://example.com https://example.com/blog
 
 # Ask a question about the page
-firecrawl https://example.com -Q "What is this page about?"
+node bundle/index.cjs https://example.com -Q "What is this page about?"
 ```
 
 #### Scrape Options
@@ -174,20 +168,17 @@ firecrawl https://example.com -Q "What is this page about?"
 Combines `map` + `scrape` to download a site into the configured data directory as nested directories.
 
 ```bash
-# Interactive wizard
-firecrawl download https://example.com
-
 # Download with limit
-firecrawl download https://example.com --limit 50 -y
+node bundle/index.cjs download https://example.com --limit 50 -y
 
 # Download with screenshots
-firecrawl download https://example.com --screenshot --limit 20 -y
+node bundle/index.cjs download https://example.com --screenshot --limit 20 -y
 
 # Filter by paths
-firecrawl download https://docs.example.com --include-paths "/api,/guide" --limit 100 -y
+node bundle/index.cjs download https://docs.example.com --include-paths "/api,/guide" --limit 100 -y
 
 # Exclude localized pages
-firecrawl download https://docs.example.com --exclude-paths "/zh,/ja,/fr,/es" -y
+node bundle/index.cjs download https://docs.example.com --exclude-paths "/zh,/ja,/fr,/es" -y
 ```
 
 #### Download Options
@@ -221,13 +212,13 @@ Search the web and optionally scrape content from search results.
 
 ```bash
 # Basic search
-firecrawl search "firecrawl web scraping"
+node bundle/index.cjs search "firecrawl web scraping"
 
 # Limit results
-firecrawl search "AI news" --limit 10
+node bundle/index.cjs search "AI news" --limit 10
 
 # Search and scrape results
-firecrawl search "firecrawl tutorials" --scrape
+node bundle/index.cjs search "firecrawl tutorials" --scrape
 ```
 
 #### Search Options
@@ -250,9 +241,9 @@ firecrawl search "firecrawl tutorials" --scrape
 ### `map` - Discover all URLs on a website
 
 ```bash
-firecrawl map https://example.com
-firecrawl map https://example.com --json
-firecrawl map https://example.com --search "blog"
+node bundle/index.cjs map https://example.com
+node bundle/index.cjs map https://example.com --json
+node bundle/index.cjs map https://example.com --search "blog"
 ```
 
 ---
@@ -261,13 +252,13 @@ firecrawl map https://example.com --search "blog"
 
 ```bash
 # Start a crawl
-firecrawl crawl https://example.com --wait --progress
+node bundle/index.cjs crawl https://example.com --wait --progress
 
 # Check crawl status
-firecrawl crawl <job-id>
+node bundle/index.cjs crawl <job-id>
 
 # Limit pages
-firecrawl crawl https://example.com --limit 100 --max-depth 3
+node bundle/index.cjs crawl https://example.com --limit 100 --max-depth 3
 ```
 
 ---
@@ -275,9 +266,9 @@ firecrawl crawl https://example.com --limit 100 --max-depth 3
 ### `agent` - AI-powered web data extraction
 
 ```bash
-firecrawl agent "Find the pricing plans for Firecrawl" --wait
-firecrawl agent "Extract company info" --schema '{"type":"object","properties":{"name":{"type":"string"}}}'
-firecrawl agent "Summarize this page" --urls https://example.com --wait
+node bundle/index.cjs agent "Find the pricing plans for Firecrawl" --wait
+node bundle/index.cjs agent "Extract company info" --schema '{"type":"object","properties":{"name":{"type":"string"}}}'
+node bundle/index.cjs agent "Summarize this page" --urls https://example.com --wait
 ```
 
 ---
@@ -286,20 +277,20 @@ firecrawl agent "Summarize this page" --urls https://example.com --wait
 
 ```bash
 # Quick shorthand (auto-launches session)
-firecrawl browser "open https://example.com"
-firecrawl browser "snapshot"
+node bundle/index.cjs browser "open https://example.com"
+node bundle/index.cjs browser "snapshot"
 
 # Explicit subcommands
-firecrawl browser launch-session
-firecrawl browser launch-session --ttl 600 --json
-firecrawl browser execute "open https://example.com"
-firecrawl browser execute "snapshot"
-firecrawl browser list
-firecrawl browser close
+node bundle/index.cjs browser launch-session
+node bundle/index.cjs browser launch-session --ttl 600 --json
+node bundle/index.cjs browser execute "open https://example.com"
+node bundle/index.cjs browser execute "snapshot"
+node bundle/index.cjs browser list
+node bundle/index.cjs browser close
 
 # Run Playwright code
-firecrawl browser execute --python 'print(await page.title())'
-firecrawl browser execute --node 'await page.title()'
+node bundle/index.cjs browser execute --python 'print(await page.title())'
+node bundle/index.cjs browser execute --node 'await page.title()'
 ```
 
 ---
@@ -307,14 +298,11 @@ firecrawl browser execute --node 'await page.title()'
 ### `config` / `view-config`
 
 ```bash
-# Interactive configuration
-firecrawl config
-
-# Direct configuration
-firecrawl config --api-url http://localhost:3002 --api-key your-key --data-dir ~/firecrawl-data
+# Set configuration (all three options required)
+node bundle/index.cjs config --api-url http://localhost:3002 --api-key your-key --data-dir ~/firecrawl-data
 
 # View current configuration
-firecrawl view-config
+node bundle/index.cjs view-config
 ```
 
 ---
@@ -323,13 +311,13 @@ firecrawl view-config
 
 ```bash
 # Show version
-firecrawl version
+node bundle/index.cjs version
 
 # Show version with auth status
-firecrawl version --auth-status
+node bundle/index.cjs version --auth-status
 
 # Show full status (version, auth, concurrency, data directory)
-firecrawl --status
+node bundle/index.cjs --status
 ```
 
 ---
@@ -364,7 +352,7 @@ src/
 ├── utils/
 │   ├── settings.ts           # Persistent settings storage (API key, URL, data dir)
 │   ├── config.ts             # Global runtime configuration
-│   ├── auth.ts               # Authentication flow & interactive prompts
+│   ├── auth.ts               # Authentication check & config validation
 │   ├── client.ts             # Firecrawl SDK client factory
 │   ├── browser-session.ts    # Browser session persistence
 │   ├── output.ts             # Output formatting & file writing
@@ -386,10 +374,13 @@ src/
 # Install dependencies
 pnpm install
 
-# Build
+# Build (for development, outputs to dist/)
 pnpm build
 
-# Watch mode
+# Bundle (for production, outputs single file to bundle/index.cjs)
+pnpm bundle
+
+# Watch mode (development)
 pnpm dev
 
 # Run tests
@@ -414,7 +405,7 @@ Tests use Vitest with v8 coverage. All tests mock the Firecrawl client to avoid 
 npx vitest run --coverage
 ```
 
-Current coverage (374 tests across 18 test files):
+Current coverage (364 tests across 18 test files):
 
 | Layer           | Stmts   | Branch  | Funcs   | Lines   |
 | --------------- | ------- | ------- | ------- | ------- |

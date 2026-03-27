@@ -53,7 +53,7 @@ const AUTH_REQUIRED_COMMANDS = [
 const program = new Command();
 
 program
-  .name('firecrawl')
+  .name('node bundle/index.cjs')
   .description('CLI tool for Firecrawl web scraping')
   .version(packageJson.version)
   .option(
@@ -747,24 +747,24 @@ function createBrowserCommand(): Command {
       'after',
       `
 Shorthand (auto-launches session if needed):
-  $ firecrawl browser "open https://example.com"
-  $ firecrawl browser "snapshot"
-  $ firecrawl browser "click @e5"
-  $ firecrawl browser "scrape"
+  $ node bundle/index.cjs browser "open https://example.com"
+  $ node bundle/index.cjs browser "snapshot"
+  $ node bundle/index.cjs browser "click @e5"
+  $ node bundle/index.cjs browser "scrape"
 
 Explicit subcommands:
-  $ firecrawl browser launch-session
-  $ firecrawl browser execute "open https://example.com"
-  $ firecrawl browser list active
-  $ firecrawl browser close
+  $ node bundle/index.cjs browser launch-session
+  $ node bundle/index.cjs browser execute "open https://example.com"
+  $ node bundle/index.cjs browser list active
+  $ node bundle/index.cjs browser close
 
   By default, commands are sent to agent-browser (pre-installed in every sandbox).
   Use --python or --node to run Playwright code instead.
-  $ firecrawl browser execute --python 'print(await page.title())'
-  $ firecrawl browser execute --node 'await page.title()'
+  $ node bundle/index.cjs browser execute --python 'print(await page.title())'
+  $ node bundle/index.cjs browser execute --node 'await page.title()'
 
   See all agent-browser commands:
-  $ firecrawl browser execute "--help"
+  $ node bundle/index.cjs browser execute "--help"
 `
     );
 
@@ -802,15 +802,15 @@ Output:
   subsequent execute/close commands target it automatically.
 
   Tip: Use the shorthand to launch + execute in one step:
-    $ firecrawl browser "open https://example.com"
+    $ node bundle/index.cjs browser "open https://example.com"
 
 Examples:
-  $ firecrawl browser launch-session
-  $ firecrawl browser launch-session --ttl 600
-  $ firecrawl browser launch-session --ttl 300 --ttl-inactivity 60
-  $ firecrawl browser launch-session --profile my-session
-  $ firecrawl browser launch-session --profile my-session --no-save-changes
-  $ firecrawl browser launch-session -o session.json --json
+  $ node bundle/index.cjs browser launch-session
+  $ node bundle/index.cjs browser launch-session --ttl 600
+  $ node bundle/index.cjs browser launch-session --ttl 300 --ttl-inactivity 60
+  $ node bundle/index.cjs browser launch-session --profile my-session
+  $ node bundle/index.cjs browser launch-session --profile my-session --no-save-changes
+  $ node bundle/index.cjs browser launch-session -o session.json --json
 `
     )
     .action(async (options) => {
@@ -861,20 +861,20 @@ How it works:
   You don't need to type "agent-browser" — it's added automatically.
 
 agent-browser examples (default):
-  $ firecrawl browser execute "open https://example.com"
-  $ firecrawl browser execute "snapshot"
-  $ firecrawl browser execute "click @e5"
-  $ firecrawl browser execute "scrape"
+  $ node bundle/index.cjs browser execute "open https://example.com"
+  $ node bundle/index.cjs browser execute "snapshot"
+  $ node bundle/index.cjs browser execute "click @e5"
+  $ node bundle/index.cjs browser execute "scrape"
 
   You can still pass the full command if you prefer:
-  $ firecrawl browser execute "agent-browser snapshot"
+  $ node bundle/index.cjs browser execute "agent-browser snapshot"
 
   Use --bash for arbitrary bash commands (not just agent-browser):
-  $ firecrawl browser execute --bash 'ls /tmp'
+  $ node bundle/index.cjs browser execute --bash 'ls /tmp'
 
 Python examples (use --python):
-  $ firecrawl browser execute --python 'print(await page.title())'
-  $ firecrawl browser execute --python '
+  $ node bundle/index.cjs browser execute --python 'print(await page.title())'
+  $ node bundle/index.cjs browser execute --python '
     await page.goto("https://news.ycombinator.com")
     title = await page.title()
     items = await page.query_selector_all(".titleline > a")
@@ -883,10 +883,10 @@ Python examples (use --python):
   '
 
 JavaScript examples (use --node):
-  $ firecrawl browser execute --node 'await page.goto("https://example.com"); await page.title()'
+  $ node bundle/index.cjs browser execute --node 'await page.goto("https://example.com"); await page.title()'
 
 Target a specific session:
-  $ firecrawl browser execute --session <id> "snapshot"
+  $ node bundle/index.cjs browser execute --session <id> "snapshot"
 
 Note: --python, --node, and --bash are mutually exclusive.
 `
@@ -944,10 +944,10 @@ Note: --python, --node, and --bash are mutually exclusive.
       'after',
       `
 Examples:
-  $ firecrawl browser list
-  $ firecrawl browser list active
-  $ firecrawl browser list destroyed
-  $ firecrawl browser list --json
+  $ node bundle/index.cjs browser list
+  $ node bundle/index.cjs browser list active
+  $ node bundle/index.cjs browser list destroyed
+  $ node bundle/index.cjs browser list --json
 `
     )
     .action(async (status, options) => {
@@ -984,8 +984,8 @@ Examples:
       'after',
       `
 Examples:
-  $ firecrawl browser close
-  $ firecrawl browser close --session <id>
+  $ node bundle/index.cjs browser close
+  $ node bundle/index.cjs browser close --session <id>
 `
     )
     .action(async (options) => {
@@ -1010,11 +1010,8 @@ program.addCommand(createBrowserCommand());
 
 program
   .command('config')
-  .description('Configure Firecrawl (login if not configured)')
-  .option(
-    '-k, --api-key <key>',
-    'Provide API key directly (skips interactive flow)'
-  )
+  .description('Configure Firecrawl settings (API key, URL, data directory)')
+  .option('-k, --api-key <key>', 'API key')
   .option('--api-url <url>', 'API URL')
   .option('--data-dir <path>', 'Directory for storing scraped data')
   .action(async (options) => {
@@ -1070,7 +1067,7 @@ async function main() {
     const { isAuthenticated } = await import('./utils/auth');
     if (!isAuthenticated()) {
       console.log(
-        'Not configured. Run "firecrawl config" or set environment variables first.\n'
+        'Not configured. Run "node bundle/index.cjs config" or set environment variables first.\n'
       );
     }
 

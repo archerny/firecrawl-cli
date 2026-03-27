@@ -100,7 +100,9 @@ async function checkAgentStatus(
   const handleInterrupt = () => {
     spinner.stop();
     process.stderr.write('\n\nInterrupted. Agent may still be running.\n');
-    process.stderr.write(`Check status with: firecrawl agent ${jobId}\n\n`);
+    process.stderr.write(
+      `Check status with: node bundle/index.cjs agent ${jobId}\n\n`
+    );
     process.exit(0);
   };
   process.on('SIGINT', handleInterrupt);
@@ -233,7 +235,9 @@ export async function executeAgent(
       const handleInterrupt = () => {
         spinner.stop();
         process.stderr.write('\n\nInterrupted. Agent is still running.\n');
-        process.stderr.write(`Check status with: firecrawl agent ${jobId}\n\n`);
+        process.stderr.write(
+          `Check status with: node bundle/index.cjs agent ${jobId}\n\n`
+        );
         process.exit(0);
       };
       process.on('SIGINT', handleInterrupt);

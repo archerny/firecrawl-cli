@@ -75,10 +75,10 @@ function buildMissingConfigMessage(): string {
     '     export FIRECRAWL_DATA_DIR="/path/to/data"',
     '',
     '  2. Command-line flags:',
-    '     firecrawl --api-key <key> --api-url <url> scrape <url>',
+    '     node bundle/index.cjs --api-key <key> --api-url <url> scrape <url>',
     '',
     '  3. Config command (saves to settings file):',
-    '     firecrawl config --api-key <key> --api-url <url> --data-dir <dir>',
+    '     node bundle/index.cjs config --api-key <key> --api-url <url> --data-dir <dir>',
     '',
     `  Settings file: ${getConfigDirectoryPath()}/settings.json`,
   ];

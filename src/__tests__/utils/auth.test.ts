@@ -222,7 +222,7 @@ describe('Authentication Utilities', () => {
       expect(errorOutput).toContain('FIRECRAWL_API_KEY');
       expect(errorOutput).toContain('FIRECRAWL_API_URL');
       expect(errorOutput).toContain('FIRECRAWL_DATA_DIR');
-      expect(errorOutput).toContain('firecrawl config');
+      expect(errorOutput).toContain('node bundle/index.cjs config');
 
       consoleErrorSpy.mockRestore();
       exitSpy.mockRestore();

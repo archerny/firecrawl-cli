@@ -107,21 +107,21 @@ export function validateConfig(apiKey?: string): void {
   const key = getApiKey(apiKey);
   if (!key) {
     throw new Error(
-      'API key is required. Set FIRECRAWL_API_KEY environment variable, use --api-key flag, or run "firecrawl config" to configure.'
+      'API key is required. Set FIRECRAWL_API_KEY environment variable, use --api-key flag, or run "node bundle/index.cjs config" to configure.'
     );
   }
 
   const url = getApiUrl();
   if (!url) {
     throw new Error(
-      'API URL is required. Set FIRECRAWL_API_URL environment variable, use --api-url flag, or run "firecrawl config" to configure.'
+      'API URL is required. Set FIRECRAWL_API_URL environment variable, use --api-url flag, or run "node bundle/index.cjs config" to configure.'
     );
   }
 
   const dataDir = getDataDir();
   if (!dataDir) {
     throw new Error(
-      'Data directory is required. Set FIRECRAWL_DATA_DIR environment variable, use --data-dir flag, or run "firecrawl config" to configure.'
+      'Data directory is required. Set FIRECRAWL_DATA_DIR environment variable, use --data-dir flag, or run "node bundle/index.cjs config" to configure.'
     );
   }
 }

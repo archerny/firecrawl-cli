@@ -39,7 +39,7 @@ export function saveBrowserSession(session: StoredBrowserSession): void {
   const sessionPath = getSessionPath();
   if (!sessionPath) {
     throw new Error(
-      'Data directory is not configured. Run "firecrawl config" to set it up.'
+      'Data directory is not configured. Run "node bundle/index.cjs config" to set it up.'
     );
   }
   ensureDataDir(path.dirname(sessionPath));
@@ -86,7 +86,7 @@ export function getSessionId(overrideId?: string): string {
   if (stored) return stored.id;
 
   throw new Error(
-    'No active browser session. Launch one with: firecrawl browser launch\n' +
+    'No active browser session. Launch one with: node bundle/index.cjs browser launch-session\n' +
       'Or specify a session ID with: --session <id>'
   );
 }

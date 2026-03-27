@@ -198,7 +198,7 @@ export async function handleMultiScrapeCommand(
   const dataDir = getDataDir();
   if (!dataDir) {
     throw new Error(
-      'Data directory is required. Run "firecrawl config" to configure.'
+      'Data directory is required. Run "node bundle/index.cjs config" to configure.'
     );
   }
 
@@ -284,22 +284,6 @@ interface AllScrapeOptions {
 }
 
 /**
- * Ask a question and return the trimmed answer.
- */
-async function ask(question: string): Promise<string> {
-  const readline = await import('readline');
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stderr,
-  });
-  const answer = await new Promise<string>((resolve) => {
-    rl.question(question, resolve);
-  });
-  rl.close();
-  return answer.trim();
-}
-
-/**
  * Extract top-level path segments from URLs and return them with counts, sorted by frequency.
  */
 export function getTopPaths(urls: string[]): { path: string; count: number }[] {
@@ -318,91 +302,6 @@ export function getTopPaths(urls: string[]): { path: string; count: number }[] {
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([p, count]) => ({ path: p, count }));
-}
-
-/**
- * Run the interactive wizard when no flags are passed.
- */
-async function runWizard(
-  urls: string[],
-  options: ScrapeOptions,
-  allOptions: AllScrapeOptions
-): Promise<{
-  options: ScrapeOptions;
-  allOptions: AllScrapeOptions;
-  urls: string[];
-}> {
-  const { checkbox, confirm } = await import('@inquirer/prompts');
-
-  // 1. Formats (spacebar multi-select)
-  const formatChoices = await checkbox<string>({
-    message: 'Which formats? (space to select, enter to confirm)',
-    choices: [
-      { name: 'markdown', value: 'markdown', checked: true },
-      { name: 'html', value: 'html' },
-      { name: 'links', value: 'links' },
-      { name: 'images', value: 'images' },
-      { name: 'summary', value: 'summary' },
-      { name: 'screenshot', value: 'screenshot' },
-      { name: 'full page screenshot', value: 'fullPageScreenshot' },
-    ],
-  });
-
-  const formats: ScrapeFormat[] = [];
-  for (const choice of formatChoices) {
-    if (choice === 'fullPageScreenshot') {
-      options = { ...options, fullPageScreenshot: true };
-    } else if (choice === 'screenshot') {
-      options = { ...options, screenshot: true };
-    } else {
-      formats.push(choice as ScrapeFormat);
-    }
-  }
-  if (
-    formats.length === 0 &&
-    !options.screenshot &&
-    !options.fullPageScreenshot
-  ) {
-    formats.push('markdown');
-  }
-  if (formats.length > 0) {
-    options = { ...options, formats };
-  }
-
-  // 2. Main content only
-  const mainContent = await confirm({
-    message: 'Only main content?',
-    default: false,
-  });
-  if (mainContent) {
-    options = { ...options, onlyMainContent: true };
-  }
-
-  // 3. Filter by paths (spacebar multi-select from discovered paths)
-  const topPaths = getTopPaths(urls);
-  if (topPaths.length > 1) {
-    const pathChoices = await checkbox<string>({
-      message: 'Filter to specific paths? (space to select, enter to skip)',
-      choices: topPaths.map((p) => ({
-        name: `${p.path} (${p.count} pages)`,
-        value: p.path,
-      })),
-    });
-
-    if (pathChoices.length > 0) {
-      allOptions = { ...allOptions, includePaths: pathChoices };
-      urls = urls.filter((url) => {
-        try {
-          const pathname = new URL(url).pathname;
-          return pathChoices.some((p) => pathname.startsWith(p));
-        } catch {
-          return false;
-        }
-      });
-    }
-  }
-
-  return { options, allOptions, urls };
 }
 
 export async function handleAllScrapeCommand(
@@ -442,49 +341,27 @@ export async function handleAllScrapeCommand(
 
   process.stderr.write(`Found ${totalFound} pages on ${mapUrl}\n`);
 
-  // Detect if user passed any explicit flags (non-interactive mode)
-  const hasExplicitFlags =
-    yes ||
-    limit !== undefined ||
-    includePaths !== undefined ||
-    excludePaths !== undefined ||
-    (options.formats &&
-      options.formats.length > 0 &&
-      options.formats[0] !== 'markdown') ||
-    options.screenshot ||
-    options.fullPageScreenshot ||
-    options.onlyMainContent;
+  // Apply path filters
+  if (includePaths && includePaths.length > 0) {
+    urls = urls.filter((url) => {
+      try {
+        const pathname = new URL(url).pathname;
+        return includePaths!.some((p) => pathname.startsWith(p));
+      } catch {
+        return false;
+      }
+    });
+  }
 
-  if (!hasExplicitFlags && process.stdin.isTTY) {
-    const result = await runWizard(urls, options, allOptions);
-    options = result.options;
-    allOptions = result.allOptions;
-    urls = result.urls;
-    includePaths = allOptions.includePaths;
-    excludePaths = allOptions.excludePaths;
-  } else {
-    // Apply filters from flags
-    if (includePaths && includePaths.length > 0) {
-      urls = urls.filter((url) => {
-        try {
-          const pathname = new URL(url).pathname;
-          return includePaths!.some((p) => pathname.startsWith(p));
-        } catch {
-          return false;
-        }
-      });
-    }
-
-    if (excludePaths && excludePaths.length > 0) {
-      urls = urls.filter((url) => {
-        try {
-          const pathname = new URL(url).pathname;
-          return !excludePaths!.some((p) => pathname.startsWith(p));
-        } catch {
-          return true;
-        }
-      });
-    }
+  if (excludePaths && excludePaths.length > 0) {
+    urls = urls.filter((url) => {
+      try {
+        const pathname = new URL(url).pathname;
+        return !excludePaths!.some((p) => pathname.startsWith(p));
+      } catch {
+        return true;
+      }
+    });
   }
 
   if (urls.length === 0) {
@@ -501,20 +378,13 @@ export async function handleAllScrapeCommand(
   const maxConcurrency = status.concurrency?.max || urls.length;
 
   if (!yes) {
-    process.stderr.write(
-      `\nScrape ${urls.length} pages, ${maxConcurrency} at a time.\n`
+    console.error(
+      `\nFound ${urls.length} pages to scrape (${maxConcurrency} at a time).`
     );
-
-    const answer = await ask('Continue? (y/N or enter a number to set limit) ');
-    const asNumber = parseInt(answer, 10);
-
-    if (!isNaN(asNumber) && asNumber > 0) {
-      urls = urls.slice(0, asNumber);
-      process.stderr.write(`Limiting to ${urls.length} pages.\n`);
-    } else if (answer.toLowerCase() !== 'y') {
-      process.stderr.write('Aborted.\n');
-      process.exit(0);
-    }
+    console.error(
+      'Pass -y or --yes to confirm, or --limit <n> to restrict page count.\n'
+    );
+    process.exit(1);
   }
 
   process.stderr.write(
@@ -524,7 +394,7 @@ export async function handleAllScrapeCommand(
   const dataDir = getDataDir();
   if (!dataDir) {
     throw new Error(
-      'Data directory is required. Run "firecrawl config" to configure.'
+      'Data directory is required. Run "node bundle/index.cjs config" to configure.'
     );
   }
 

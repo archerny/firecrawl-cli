@@ -193,7 +193,7 @@ function printDataDirStatus(
 ): void {
   if (!localStatus.dataDirConfigured) {
     console.log(
-      `  ${dim}Data dir:${reset} not configured ${dim}- run 'firecrawl config' to set${reset}`
+      `  ${dim}Data dir:${reset} not configured ${dim}- run 'node bundle/index.cjs config' to set${reset}`
     );
   } else if (localStatus.dataDirExists) {
     console.log(
@@ -236,7 +236,9 @@ export async function handleStatusCommand(): Promise<void> {
     console.log(`  ${green}●${reset} Configured ${dim}${sourceLabel}${reset}`);
   } else {
     console.log(`  ${red}●${reset} Not configured`);
-    console.log(`  ${dim}Run 'firecrawl config' to configure${reset}`);
+    console.log(
+      `  ${dim}Run 'node bundle/index.cjs config' to configure${reset}`
+    );
     console.log('');
     printDataDirStatus(localStatus, dim, reset);
     console.log('');
