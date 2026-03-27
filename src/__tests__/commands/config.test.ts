@@ -4,9 +4,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { configure, viewConfig } from '../../commands/config';
-import { initializeConfig, resetConfig, getConfig } from '../../utils/config';
+import { initializeConfig, resetConfig } from '../../utils/config';
 import * as settings from '../../utils/settings';
-import * as auth from '../../utils/auth';
 
 // Mock settings module
 vi.mock('../../utils/settings', () => ({
@@ -20,7 +19,6 @@ vi.mock('../../utils/auth', async () => {
   const actual = await vi.importActual('../../utils/auth');
   return {
     ...actual,
-    manualLogin: vi.fn(),
   };
 });
 
@@ -66,51 +64,41 @@ describe('Config Command', () => {
       );
     });
 
-    it('should trigger interactive flow when only apiKey provided', async () => {
-      vi.mocked(auth.manualLogin).mockResolvedValue({
-        apiKey: 'fc-manual-key',
-        apiUrl: 'https://manual.api.dev',
-        dataDir: '/tmp/data',
-      });
-
+    it('should exit with error when only apiKey provided (missing apiUrl and dataDir)', async () => {
       await configure({ apiKey: 'fc-some-key' });
 
-      expect(auth.manualLogin).toHaveBeenCalled();
-      expect(settings.saveSettings).toHaveBeenCalledWith({
-        apiKey: 'fc-manual-key',
-        apiUrl: 'https://manual.api.dev',
-        dataDir: '/tmp/data',
-      });
+      expect(process.exit).toHaveBeenCalledWith(1);
+      const errorOutput = consoleErrorSpy.mock.calls
+        .map((c: any) => c[0])
+        .join('\n');
+      expect(errorOutput).toContain('--api-url');
+      expect(errorOutput).toContain('--data-dir');
     });
 
-    it('should pass existing apiUrl to manualLogin when only apiUrl provided', async () => {
-      vi.mocked(auth.manualLogin).mockResolvedValue({
-        apiKey: 'fc-key',
-        apiUrl: 'https://provided.api.dev',
-        dataDir: '/tmp/data',
-      });
+    it('should exit with error when only apiUrl provided (missing apiKey and dataDir)', async () => {
+      await configure({ apiUrl: 'https://api.dev' });
 
-      await configure({ apiUrl: 'https://provided.api.dev' });
-
-      expect(auth.manualLogin).toHaveBeenCalledWith(
-        'https://provided.api.dev',
-        undefined
-      );
+      expect(process.exit).toHaveBeenCalledWith(1);
+      const errorOutput = consoleErrorSpy.mock.calls
+        .map((c: any) => c[0])
+        .join('\n');
+      expect(errorOutput).toContain('--api-key');
+      expect(errorOutput).toContain('--data-dir');
     });
 
-    it('should trigger interactive flow when not configured and no options', async () => {
-      vi.mocked(auth.manualLogin).mockResolvedValue({
-        apiKey: 'fc-new-key',
-        apiUrl: 'https://api.dev',
-        dataDir: '/tmp/data',
-      });
-
+    it('should exit with error when not configured and no options', async () => {
       await configure();
 
-      expect(auth.manualLogin).toHaveBeenCalled();
+      expect(process.exit).toHaveBeenCalledWith(1);
+      const errorOutput = consoleErrorSpy.mock.calls
+        .map((c: any) => c[0])
+        .join('\n');
+      expect(errorOutput).toContain('--api-key');
+      expect(errorOutput).toContain('--api-url');
+      expect(errorOutput).toContain('--data-dir');
     });
 
-    it('should show existing config when already configured', async () => {
+    it('should show existing config when already configured and no options', async () => {
       initializeConfig({
         apiKey: 'fc-existing-key',
         apiUrl: 'https://api.firecrawl.dev',
@@ -127,16 +115,6 @@ describe('Config Command', () => {
       const output = consoleSpy.mock.calls.map((c: any) => c[0]).join('\n');
       expect(output).toContain('Configured');
       expect(output).toContain('fc-exi');
-    });
-
-    it('should exit when manual login fails', async () => {
-      vi.mocked(auth.manualLogin).mockRejectedValue(
-        new Error('User cancelled')
-      );
-
-      await configure();
-
-      expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
 

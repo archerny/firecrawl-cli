@@ -76,8 +76,7 @@ program
     // Check if this command requires authentication
     const commandName = actionCommand.name();
     if (AUTH_REQUIRED_COMMANDS.includes(commandName)) {
-      // Ensure user is authenticated (prompts for login if needed)
-      await ensureAuthenticated();
+      ensureAuthenticated();
     }
   });
 
@@ -1064,22 +1063,17 @@ async function main() {
     return;
   }
 
-  // If no arguments or just help flags, check auth and show appropriate message
+  // If no arguments or just help flags, show banner and help
   if (args.length === 0) {
+    printBanner();
+
     const { isAuthenticated } = await import('./utils/auth');
-
     if (!isAuthenticated()) {
-      // Not authenticated - prompt for login (banner is shown by ensureAuthenticated)
-      await ensureAuthenticated();
-
-      console.log("You're all set! Try scraping a URL:\n");
-      console.log('  firecrawl https://example.com\n');
-      console.log('For more commands, run: firecrawl --help\n');
-      return;
+      console.log(
+        'Not configured. Run "firecrawl config" or set environment variables first.\n'
+      );
     }
 
-    // Authenticated - show banner and help
-    printBanner();
     program.outputHelp();
     return;
   }

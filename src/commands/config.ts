@@ -9,7 +9,7 @@ import {
   getConfigDirectoryPath,
 } from '../utils/settings';
 import { getConfig, getDataDir, updateConfig } from '../utils/config';
-import { isAuthenticated, manualLogin } from '../utils/auth';
+import { isAuthenticated } from '../utils/auth';
 
 export interface ConfigureOptions {
   apiKey?: string;
@@ -19,60 +19,61 @@ export interface ConfigureOptions {
 
 /**
  * Configure - set API URL, API key, and data directory
- * If all three are provided via options, saves directly.
- * Otherwise, triggers interactive prompt.
+ * All three must be provided via options. If any are missing, prints usage and exits.
  */
 export async function configure(options: ConfigureOptions = {}): Promise<void> {
-  // If not authenticated or explicit options provided, trigger config flow
-  if (
-    !isAuthenticated() ||
-    options.apiKey ||
-    options.apiUrl ||
-    options.dataDir
-  ) {
-    // If all three are provided, save directly
-    if (options.apiKey && options.apiUrl && options.dataDir) {
-      saveSettings({
-        apiKey: options.apiKey,
-        apiUrl: options.apiUrl,
-        dataDir: options.dataDir,
-      });
-      updateConfig({
-        apiKey: options.apiKey,
-        apiUrl: options.apiUrl,
-        dataDir: options.dataDir,
-      });
-      console.log('\n✓ Configuration saved successfully!\n');
+  // If no options provided and already authenticated, show current config
+  if (!options.apiKey && !options.apiUrl && !options.dataDir) {
+    if (isAuthenticated()) {
+      await viewConfig();
+      console.log(
+        'To re-configure, run: firecrawl config --api-key <key> --api-url <url> --data-dir <dir>\n'
+      );
       return;
     }
 
-    // Interactive flow - prompt for missing values
-    try {
-      const result = await manualLogin(options.apiUrl, options.dataDir);
-      saveSettings({
-        apiKey: result.apiKey,
-        apiUrl: result.apiUrl,
-        dataDir: result.dataDir,
-      });
-      updateConfig({
-        apiKey: result.apiKey,
-        apiUrl: result.apiUrl,
-        dataDir: result.dataDir,
-      });
-      console.log('\n✓ Configuration saved successfully!\n');
-    } catch (error) {
-      console.error(
-        '\nConfiguration failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      process.exit(1);
-    }
-    return;
+    // Not authenticated and no options - show usage
+    console.error(
+      'Error: All three options are required: --api-key, --api-url, --data-dir\n'
+    );
+    console.error('Usage:');
+    console.error(
+      '  firecrawl config --api-key <key> --api-url <url> --data-dir <dir>\n'
+    );
+    console.error('Example:');
+    console.error(
+      '  firecrawl config --api-key fc-xxx --api-url https://api.firecrawl.dev --data-dir /tmp/firecrawl\n'
+    );
+    process.exit(1);
   }
 
-  // Already authenticated - show current config
-  await viewConfig();
-  console.log('To re-configure, run: firecrawl config --api-key <key>\n');
+  // Some options provided but not all three - report what's missing
+  if (!options.apiKey || !options.apiUrl || !options.dataDir) {
+    const missing: string[] = [];
+    if (!options.apiKey) missing.push('--api-key');
+    if (!options.apiUrl) missing.push('--api-url');
+    if (!options.dataDir) missing.push('--data-dir');
+
+    console.error(`Error: Missing required option(s): ${missing.join(', ')}\n`);
+    console.error('All three options must be provided together:');
+    console.error(
+      '  firecrawl config --api-key <key> --api-url <url> --data-dir <dir>\n'
+    );
+    process.exit(1);
+  }
+
+  // All three provided - save directly
+  saveSettings({
+    apiKey: options.apiKey,
+    apiUrl: options.apiUrl,
+    dataDir: options.dataDir,
+  });
+  updateConfig({
+    apiKey: options.apiKey,
+    apiUrl: options.apiUrl,
+    dataDir: options.dataDir,
+  });
+  console.log('\n✓ Configuration saved successfully!\n');
 }
 
 /**
