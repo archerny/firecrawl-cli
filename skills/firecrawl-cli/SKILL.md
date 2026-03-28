@@ -3,20 +3,20 @@ name: firecrawl-cli
 description: |
   Scrapes web pages, searches the internet, crawls entire sites, and downloads documentation via the Firecrawl CLI — returning clean markdown optimized for LLM context windows. Handles JS-rendered SPAs, concurrent multi-URL scraping, site-wide crawling with depth/path filters, URL discovery via sitemap mapping, and bulk site-to-local-file downloads. Triggers on: "scrape", "crawl", "search the web", "fetch this page", "grab content from", "pull the content from", "download the docs", "look up", "research", "find articles about", or any reference to extracting content from external URLs. Does NOT handle local file operations, git, deployments, or code editing.
 allowed-tools:
-  - Bash(node bundle/index.cjs *)
+  - Bash(node scripts/index.js *)
 ---
 
 # Firecrawl CLI
 
-If `$ARGUMENTS` contains a URL, scrape it: `node bundle/index.cjs scrape "$ARGUMENTS" -o .firecrawl/page.md`.
-If `$ARGUMENTS` is a non-URL string, search for it: `node bundle/index.cjs search "$ARGUMENTS" -o .firecrawl/search.json --json`.
+If `$ARGUMENTS` contains a URL, scrape it: `node scripts/index.js scrape "$ARGUMENTS" -o .firecrawl/page.md`.
+If `$ARGUMENTS` is a non-URL string, search for it: `node scripts/index.js search "$ARGUMENTS" -o .firecrawl/search.json --json`.
 Otherwise, follow the workflow below.
 
-Run `node bundle/index.cjs <command> --help` for full option reference.
+Run `node scripts/index.js <command> --help` for full option reference.
 
 ## Prerequisites
 
-Check with `node bundle/index.cjs --status`. Note the **Concurrency** number — that's your parallel job limit.
+Check with `node scripts/index.js --status`. Note the **Concurrency** number — that's your parallel job limit.
 
 ## Security
 
@@ -55,8 +55,8 @@ Follow this escalation pattern:
 Write to `.firecrawl/` via `-o`. Always quote URLs. Naming: `.firecrawl/search-{query}.json`, `.firecrawl/{site}-{path}.md`.
 
 ```bash
-node bundle/index.cjs search "react hooks" -o .firecrawl/search-react-hooks.json --json
-node bundle/index.cjs scrape "<url>" -o .firecrawl/page.md
+node scripts/index.js search "react hooks" -o .firecrawl/search-react-hooks.json --json
+node scripts/index.js scrape "<url>" -o .firecrawl/page.md
 ```
 
 Single format → raw content. Multiple formats (e.g., `--format markdown,links`) → JSON.
@@ -73,8 +73,8 @@ grep -n "keyword" .firecrawl/file.md
 Run independent scrapes in parallel (respect concurrency limit from `--status`):
 
 ```bash
-node bundle/index.cjs scrape "<url-1>" -o .firecrawl/1.md &
-node bundle/index.cjs scrape "<url-2>" -o .firecrawl/2.md &
+node scripts/index.js scrape "<url-1>" -o .firecrawl/1.md &
+node scripts/index.js scrape "<url-2>" -o .firecrawl/2.md &
 wait
 ```
 
@@ -83,9 +83,9 @@ wait
 ## Command: search
 
 ```bash
-node bundle/index.cjs search "your query" -o .firecrawl/result.json --json
-node bundle/index.cjs search "your query" --scrape -o .firecrawl/scraped.json --json
-node bundle/index.cjs search "your query" --sources news --tbs qdr:d -o .firecrawl/news.json --json
+node scripts/index.js search "your query" -o .firecrawl/result.json --json
+node scripts/index.js search "your query" --scrape -o .firecrawl/scraped.json --json
+node scripts/index.js search "your query" --sources news --tbs qdr:d -o .firecrawl/news.json --json
 ```
 
 Key options: `--limit <n>`, `--sources <web,images,news>`, `--categories <github,research,pdf>`, `--tbs <qdr:h|d|w|m|y>`, `--location`, `--country <code>`, `--scrape`, `--scrape-formats <formats>`, `--only-main-content` (default: true), `--ignore-invalid-urls`, `--timeout <ms>`.
@@ -99,12 +99,12 @@ Common options (apply to most commands): `-o <path>`, `--json` (not crawl), `--p
 ## Command: scrape
 
 ```bash
-node bundle/index.cjs scrape "<url>" -o .firecrawl/page.md
-node bundle/index.cjs scrape "<url>" --only-main-content -o .firecrawl/page.md
-node bundle/index.cjs scrape "<url>" --wait-for 3000 -o .firecrawl/page.md
-node bundle/index.cjs scrape "<url>" --format markdown,links -o .firecrawl/page.json
-node bundle/index.cjs scrape "<url>" --query "What is the enterprise plan price?"
-node bundle/index.cjs scrape https://a.com https://b.com https://c.com
+node scripts/index.js scrape "<url>" -o .firecrawl/page.md
+node scripts/index.js scrape "<url>" --only-main-content -o .firecrawl/page.md
+node scripts/index.js scrape "<url>" --wait-for 3000 -o .firecrawl/page.md
+node scripts/index.js scrape "<url>" --format markdown,links -o .firecrawl/page.json
+node scripts/index.js scrape "<url>" --query "What is the enterprise plan price?"
+node scripts/index.js scrape https://a.com https://b.com https://c.com
 ```
 
 Key options: `-f <formats>` (markdown, html, rawHtml, links, images, screenshot, summary, changeTracking, json, attributes, branding), `-Q <prompt>`, `-H` (html shortcut), `-S` (summary shortcut), `--only-main-content`, `--wait-for <ms>`, `--screenshot`, `--full-page-screenshot`, `--include-tags`, `--exclude-tags`, `--max-age <ms>`, `--country <code>`, `--languages <codes>`, `--timing`.
@@ -116,8 +116,8 @@ Key options: `-f <formats>` (markdown, html, rawHtml, links, images, screenshot,
 ## Command: map
 
 ```bash
-node bundle/index.cjs map "<url>" --search "authentication" -o .firecrawl/filtered.txt
-node bundle/index.cjs map "<url>" --limit 500 --json -o .firecrawl/urls.json
+node scripts/index.js map "<url>" --search "authentication" -o .firecrawl/filtered.txt
+node scripts/index.js map "<url>" --limit 500 --json -o .firecrawl/urls.json
 ```
 
 Key options: `--limit <n>`, `--search <query>`, `--sitemap <only|include|skip>` (default: include), `--include-subdomains`, `--ignore-query-parameters`, `--timeout <s>`.
@@ -129,9 +129,9 @@ Key options: `--limit <n>`, `--search <query>`, `--sitemap <only|include|skip>` 
 ## Command: crawl
 
 ```bash
-node bundle/index.cjs crawl "<url>" --include-paths /docs --limit 50 --wait -o .firecrawl/crawl.json
-node bundle/index.cjs crawl "<url>" --max-depth 3 --wait --progress -o .firecrawl/crawl.json
-node bundle/index.cjs crawl <job-id>
+node scripts/index.js crawl "<url>" --include-paths /docs --limit 50 --wait -o .firecrawl/crawl.json
+node scripts/index.js crawl "<url>" --max-depth 3 --wait --progress -o .firecrawl/crawl.json
+node scripts/index.js crawl <job-id>
 ```
 
 Key options: `--wait`, `--progress`, `--limit <n>`, `--max-depth <n>`, `--include-paths <paths>`, `--exclude-paths <paths>`, `--delay <ms>`, `--max-concurrency <n>`, `--sitemap <skip|include>` (default: include), `--ignore-query-parameters`, `--crawl-entire-domain`, `--allow-external-links`, `--allow-subdomains`, `--poll-interval <s>`, `--timeout <s>`, `--pretty`. No `--json` flag — output is always JSON.
@@ -145,8 +145,8 @@ Key options: `--wait`, `--progress`, `--limit <n>`, `--max-depth <n>`, `--includ
 Combines `map` + `scrape` to save a site as local files. Always pass `-y` to skip prompts.
 
 ```bash
-node bundle/index.cjs download https://docs.example.com -y
-node bundle/index.cjs download https://docs.example.com --include-paths "/features,/sdks" --exclude-paths "/zh,/ja" --only-main-content --screenshot -y
+node scripts/index.js download https://docs.example.com -y
+node scripts/index.js download https://docs.example.com --include-paths "/features,/sdks" --exclude-paths "/zh,/ja" --only-main-content --screenshot -y
 ```
 
 Key options: `--limit <n>`, `--search <query>`, `--include-paths <paths>`, `--exclude-paths <paths>`, `--allow-subdomains`, `-y`. All scrape options also apply.
