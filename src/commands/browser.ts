@@ -5,6 +5,7 @@
 
 import { spawn } from 'child_process';
 import { getClient } from '../utils/client';
+import { getCliName } from '../utils/cli-name';
 import {
   saveBrowserSession,
   loadBrowserSession,
@@ -214,7 +215,7 @@ export async function handleBrowserExecute(
       console.error(
         `Error: Session ${sessionId} has expired or been destroyed.\n` +
           'The session may have exceeded its TTL or been closed.\n' +
-          'Start a new session with: node bundle/index.cjs browser launch-session'
+          `Start a new session with: ${getCliName()} browser launch-session`
       );
       const stored = loadBrowserSession();
       if (stored && !options.session) {
@@ -282,7 +283,7 @@ export async function handleBrowserList(
 
 /**
  * Shorthand: auto-launch a session if needed, then execute an agent-browser command.
- * Enables `node bundle/index.cjs browser "open example.com"` without a separate launch step.
+ * Enables `firecrawl browser "open example.com"` without a separate launch step.
  */
 export async function handleBrowserQuickExecute(
   options: BrowserQuickExecuteOptions

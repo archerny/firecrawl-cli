@@ -5,6 +5,7 @@
 
 import { getConfigDirectoryPath } from './settings';
 import { getApiKey, getApiUrl, getDataDir } from './config';
+import { getCliName } from './cli-name';
 
 /**
  * Print the Firecrawl CLI banner
@@ -75,10 +76,10 @@ function buildMissingConfigMessage(): string {
     '     export FIRECRAWL_DATA_DIR="/path/to/data"',
     '',
     '  2. Command-line flags:',
-    '     node bundle/index.cjs --api-key <key> --api-url <url> scrape <url>',
+    `     ${getCliName()} --api-key <key> --api-url <url> scrape <url>`,
     '',
     '  3. Config command (saves to settings file):',
-    '     node bundle/index.cjs config --api-key <key> --api-url <url> --data-dir <dir>',
+    `     ${getCliName()} config --api-key <key> --api-url <url> --data-dir <dir>`,
     '',
     `  Settings file: ${getConfigDirectoryPath()}/settings.json`,
   ];

@@ -14,6 +14,11 @@ vi.mock('../../utils/settings', () => ({
   getConfigDirectoryPath: vi.fn().mockReturnValue('/mock/config/path'),
 }));
 
+// Mock cli-name module
+vi.mock('../../utils/cli-name', () => ({
+  getCliName: vi.fn().mockReturnValue('firecrawl'),
+}));
+
 describe('Authentication Utilities', () => {
   const originalEnv = process.env;
 
@@ -222,7 +227,7 @@ describe('Authentication Utilities', () => {
       expect(errorOutput).toContain('FIRECRAWL_API_KEY');
       expect(errorOutput).toContain('FIRECRAWL_API_URL');
       expect(errorOutput).toContain('FIRECRAWL_DATA_DIR');
-      expect(errorOutput).toContain('node bundle/index.cjs config');
+      expect(errorOutput).toContain('firecrawl config');
 
       consoleErrorSpy.mockRestore();
       exitSpy.mockRestore();

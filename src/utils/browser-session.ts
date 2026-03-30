@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { getDataDir } from './config';
+import { getCliName } from './cli-name';
 
 export interface StoredBrowserSession {
   id: string;
@@ -39,7 +40,7 @@ export function saveBrowserSession(session: StoredBrowserSession): void {
   const sessionPath = getSessionPath();
   if (!sessionPath) {
     throw new Error(
-      'Data directory is not configured. Run "node bundle/index.cjs config" to set it up.'
+      `Data directory is not configured. Run "${getCliName()} config" to set it up.`
     );
   }
   ensureDataDir(path.dirname(sessionPath));
@@ -86,7 +87,7 @@ export function getSessionId(overrideId?: string): string {
   if (stored) return stored.id;
 
   throw new Error(
-    'No active browser session. Launch one with: node bundle/index.cjs browser launch-session\n' +
+    `No active browser session. Launch one with: ${getCliName()} browser launch-session\n` +
       'Or specify a session ID with: --session <id>'
   );
 }

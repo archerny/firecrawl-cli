@@ -13,6 +13,7 @@ import { getClient } from '../utils/client';
 import { handleScrapeOutput, writeOutput } from '../utils/output';
 import { getOrigin } from '../utils/url';
 import { getDataDir } from '../utils/config';
+import { getCliName } from '../utils/cli-name';
 import { executeMap } from './map';
 import { getStatus } from './status';
 
@@ -198,7 +199,7 @@ export async function handleMultiScrapeCommand(
   const dataDir = getDataDir();
   if (!dataDir) {
     throw new Error(
-      'Data directory is required. Run "node bundle/index.cjs config" to configure.'
+      `Data directory is required. Run "${getCliName()} config" to configure.`
     );
   }
 
@@ -394,7 +395,7 @@ export async function handleAllScrapeCommand(
   const dataDir = getDataDir();
   if (!dataDir) {
     throw new Error(
-      'Data directory is required. Run "node bundle/index.cjs config" to configure.'
+      `Data directory is required. Run "${getCliName()} config" to configure.`
     );
   }
 

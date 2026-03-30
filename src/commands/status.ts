@@ -8,6 +8,7 @@ import path from 'path';
 import packageJson from '../../package.json';
 import { isAuthenticated } from '../utils/auth';
 import { getConfig, getDataDir, validateConfig } from '../utils/config';
+import { getCliName } from '../utils/cli-name';
 import { loadSettings } from '../utils/settings';
 
 type AuthSource = 'env' | 'stored' | 'none';
@@ -193,7 +194,7 @@ function printDataDirStatus(
 ): void {
   if (!localStatus.dataDirConfigured) {
     console.log(
-      `  ${dim}Data dir:${reset} not configured ${dim}- run 'node bundle/index.cjs config' to set${reset}`
+      `  ${dim}Data dir:${reset} not configured ${dim}- run '${getCliName()} config' to set${reset}`
     );
   } else if (localStatus.dataDirExists) {
     console.log(
@@ -236,9 +237,7 @@ export async function handleStatusCommand(): Promise<void> {
     console.log(`  ${green}●${reset} Configured ${dim}${sourceLabel}${reset}`);
   } else {
     console.log(`  ${red}●${reset} Not configured`);
-    console.log(
-      `  ${dim}Run 'node bundle/index.cjs config' to configure${reset}`
-    );
+    console.log(`  ${dim}Run '${getCliName()} config' to configure${reset}`);
     console.log('');
     printDataDirStatus(localStatus, dim, reset);
     console.log('');

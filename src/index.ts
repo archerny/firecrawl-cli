@@ -32,6 +32,7 @@ import { isUrl, normalizeUrl } from './utils/url';
 import { parseScrapeOptions } from './utils/options';
 import { isJobId } from './utils/job';
 import { ensureAuthenticated, printBanner } from './utils/auth';
+import { getCliName } from './utils/cli-name';
 import packageJson from '../package.json';
 import type { SearchSource, SearchCategory } from './types/search';
 import type { ScrapeFormat } from './types/scrape';
@@ -53,7 +54,7 @@ const AUTH_REQUIRED_COMMANDS = [
 const program = new Command();
 
 program
-  .name('node bundle/index.cjs')
+  .name(getCliName())
   .description('CLI tool for Firecrawl web scraping')
   .version(packageJson.version)
   .option(
@@ -747,24 +748,24 @@ function createBrowserCommand(): Command {
       'after',
       `
 Shorthand (auto-launches session if needed):
-  $ node bundle/index.cjs browser "open https://example.com"
-  $ node bundle/index.cjs browser "snapshot"
-  $ node bundle/index.cjs browser "click @e5"
-  $ node bundle/index.cjs browser "scrape"
+  $ ${getCliName()} browser "open https://example.com"
+  $ ${getCliName()} browser "snapshot"
+  $ ${getCliName()} browser "click @e5"
+  $ ${getCliName()} browser "scrape"
 
 Explicit subcommands:
-  $ node bundle/index.cjs browser launch-session
-  $ node bundle/index.cjs browser execute "open https://example.com"
-  $ node bundle/index.cjs browser list active
-  $ node bundle/index.cjs browser close
+  $ ${getCliName()} browser launch-session
+  $ ${getCliName()} browser execute "open https://example.com"
+  $ ${getCliName()} browser list active
+  $ ${getCliName()} browser close
 
   By default, commands are sent to agent-browser (pre-installed in every sandbox).
   Use --python or --node to run Playwright code instead.
-  $ node bundle/index.cjs browser execute --python 'print(await page.title())'
-  $ node bundle/index.cjs browser execute --node 'await page.title()'
+  $ ${getCliName()} browser execute --python 'print(await page.title())'
+  $ ${getCliName()} browser execute --node 'await page.title()'
 
   See all agent-browser commands:
-  $ node bundle/index.cjs browser execute "--help"
+  $ ${getCliName()} browser execute "--help"
 `
     );
 
@@ -802,15 +803,15 @@ Output:
   subsequent execute/close commands target it automatically.
 
   Tip: Use the shorthand to launch + execute in one step:
-    $ node bundle/index.cjs browser "open https://example.com"
+    $ ${getCliName()} browser "open https://example.com"
 
 Examples:
-  $ node bundle/index.cjs browser launch-session
-  $ node bundle/index.cjs browser launch-session --ttl 600
-  $ node bundle/index.cjs browser launch-session --ttl 300 --ttl-inactivity 60
-  $ node bundle/index.cjs browser launch-session --profile my-session
-  $ node bundle/index.cjs browser launch-session --profile my-session --no-save-changes
-  $ node bundle/index.cjs browser launch-session -o session.json --json
+  $ ${getCliName()} browser launch-session
+  $ ${getCliName()} browser launch-session --ttl 600
+  $ ${getCliName()} browser launch-session --ttl 300 --ttl-inactivity 60
+  $ ${getCliName()} browser launch-session --profile my-session
+  $ ${getCliName()} browser launch-session --profile my-session --no-save-changes
+  $ ${getCliName()} browser launch-session -o session.json --json
 `
     )
     .action(async (options) => {
@@ -861,20 +862,20 @@ How it works:
   You don't need to type "agent-browser" — it's added automatically.
 
 agent-browser examples (default):
-  $ node bundle/index.cjs browser execute "open https://example.com"
-  $ node bundle/index.cjs browser execute "snapshot"
-  $ node bundle/index.cjs browser execute "click @e5"
-  $ node bundle/index.cjs browser execute "scrape"
+  $ ${getCliName()} browser execute "open https://example.com"
+  $ ${getCliName()} browser execute "snapshot"
+  $ ${getCliName()} browser execute "click @e5"
+  $ ${getCliName()} browser execute "scrape"
 
   You can still pass the full command if you prefer:
-  $ node bundle/index.cjs browser execute "agent-browser snapshot"
+  $ ${getCliName()} browser execute "agent-browser snapshot"
 
   Use --bash for arbitrary bash commands (not just agent-browser):
-  $ node bundle/index.cjs browser execute --bash 'ls /tmp'
+  $ ${getCliName()} browser execute --bash 'ls /tmp'
 
 Python examples (use --python):
-  $ node bundle/index.cjs browser execute --python 'print(await page.title())'
-  $ node bundle/index.cjs browser execute --python '
+  $ ${getCliName()} browser execute --python 'print(await page.title())'
+  $ ${getCliName()} browser execute --python '
     await page.goto("https://news.ycombinator.com")
     title = await page.title()
     items = await page.query_selector_all(".titleline > a")
@@ -883,10 +884,10 @@ Python examples (use --python):
   '
 
 JavaScript examples (use --node):
-  $ node bundle/index.cjs browser execute --node 'await page.goto("https://example.com"); await page.title()'
+  $ ${getCliName()} browser execute --node 'await page.goto("https://example.com"); await page.title()'
 
 Target a specific session:
-  $ node bundle/index.cjs browser execute --session <id> "snapshot"
+  $ ${getCliName()} browser execute --session <id> "snapshot"
 
 Note: --python, --node, and --bash are mutually exclusive.
 `
@@ -944,10 +945,10 @@ Note: --python, --node, and --bash are mutually exclusive.
       'after',
       `
 Examples:
-  $ node bundle/index.cjs browser list
-  $ node bundle/index.cjs browser list active
-  $ node bundle/index.cjs browser list destroyed
-  $ node bundle/index.cjs browser list --json
+  $ ${getCliName()} browser list
+  $ ${getCliName()} browser list active
+  $ ${getCliName()} browser list destroyed
+  $ ${getCliName()} browser list --json
 `
     )
     .action(async (status, options) => {
@@ -984,8 +985,8 @@ Examples:
       'after',
       `
 Examples:
-  $ node bundle/index.cjs browser close
-  $ node bundle/index.cjs browser close --session <id>
+  $ ${getCliName()} browser close
+  $ ${getCliName()} browser close --session <id>
 `
     )
     .action(async (options) => {
@@ -1067,7 +1068,7 @@ async function main() {
     const { isAuthenticated } = await import('./utils/auth');
     if (!isAuthenticated()) {
       console.log(
-        'Not configured. Run "node bundle/index.cjs config" or set environment variables first.\n'
+        `Not configured. Run "${getCliName()} config" or set environment variables first.\n`
       );
     }
 

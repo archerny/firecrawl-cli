@@ -10,6 +10,7 @@ import {
 } from '../utils/settings';
 import { getConfig, getDataDir, updateConfig } from '../utils/config';
 import { isAuthenticated } from '../utils/auth';
+import { getCliName } from '../utils/cli-name';
 
 export interface ConfigureOptions {
   apiKey?: string;
@@ -27,7 +28,7 @@ export async function configure(options: ConfigureOptions = {}): Promise<void> {
     if (isAuthenticated()) {
       await viewConfig();
       console.log(
-        'To re-configure, run: node bundle/index.cjs config --api-key <key> --api-url <url> --data-dir <dir>\n'
+        `To re-configure, run: ${getCliName()} config --api-key <key> --api-url <url> --data-dir <dir>\n`
       );
       return;
     }
@@ -38,11 +39,11 @@ export async function configure(options: ConfigureOptions = {}): Promise<void> {
     );
     console.error('Usage:');
     console.error(
-      '  node bundle/index.cjs config --api-key <key> --api-url <url> --data-dir <dir>\n'
+      `  ${getCliName()} config --api-key <key> --api-url <url> --data-dir <dir>\n`
     );
     console.error('Example:');
     console.error(
-      '  node bundle/index.cjs config --api-key fc-xxx --api-url https://api.firecrawl.dev --data-dir /tmp/firecrawl\n'
+      `  ${getCliName()} config --api-key fc-xxx --api-url https://api.firecrawl.dev --data-dir /tmp/firecrawl\n`
     );
     process.exit(1);
   }
@@ -57,7 +58,7 @@ export async function configure(options: ConfigureOptions = {}): Promise<void> {
     console.error(`Error: Missing required option(s): ${missing.join(', ')}\n`);
     console.error('All three options must be provided together:');
     console.error(
-      '  node bundle/index.cjs config --api-key <key> --api-url <url> --data-dir <dir>\n'
+      `  ${getCliName()} config --api-key <key> --api-url <url> --data-dir <dir>\n`
     );
     process.exit(1);
   }
@@ -98,13 +99,13 @@ export async function viewConfig(): Promise<void> {
     console.log(`Data Dir:  ${getDataDir() || 'Not set'}`);
     console.log(`Config:    ${getConfigDirectoryPath()}`);
     console.log('\nCommands:');
-    console.log('  node bundle/index.cjs config       Re-configure');
-    console.log('  node bundle/index.cjs view-config  View configuration');
+    console.log(`  ${getCliName()} config       Re-configure`);
+    console.log(`  ${getCliName()} view-config  View configuration`);
   } else {
     console.log('Status: Not configured\n');
     console.log('Configure using:');
     console.log(
-      '  node bundle/index.cjs config --api-key <key> --api-url <url> --data-dir <dir>'
+      `  ${getCliName()} config --api-key <key> --api-url <url> --data-dir <dir>`
     );
   }
   console.log('');

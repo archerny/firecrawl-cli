@@ -8,6 +8,7 @@ import type {
   AgentStatusResult,
 } from '../types/agent';
 import { getClient } from '../utils/client';
+import { getCliName } from '../utils/cli-name';
 import { isJobId } from '../utils/job';
 import { writeOutput } from '../utils/output';
 import { createSpinner } from '../utils/spinner';
@@ -101,7 +102,7 @@ async function checkAgentStatus(
     spinner.stop();
     process.stderr.write('\n\nInterrupted. Agent may still be running.\n');
     process.stderr.write(
-      `Check status with: node bundle/index.cjs agent ${jobId}\n\n`
+      `Check status with: ${getCliName()} agent ${jobId}\n\n`
     );
     process.exit(0);
   };
@@ -236,7 +237,7 @@ export async function executeAgent(
         spinner.stop();
         process.stderr.write('\n\nInterrupted. Agent is still running.\n');
         process.stderr.write(
-          `Check status with: node bundle/index.cjs agent ${jobId}\n\n`
+          `Check status with: ${getCliName()} agent ${jobId}\n\n`
         );
         process.exit(0);
       };
