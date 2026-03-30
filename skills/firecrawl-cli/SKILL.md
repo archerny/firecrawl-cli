@@ -4,7 +4,7 @@ description: |
   Scrapes web pages, searches the internet, crawls entire sites, and downloads documentation via the Firecrawl CLI — returning clean markdown optimized for LLM context windows. Handles JS-rendered SPAs, concurrent multi-URL scraping, site-wide crawling with depth/path filters, URL discovery via sitemap mapping, and bulk site-to-local-file downloads. Triggers on: "scrape", "crawl", "search the web", "fetch this page", "grab content from", "pull the content from", "download the docs", "look up", "research", "find articles about", or any reference to extracting content from external URLs. Does NOT handle local file operations, git, deployments, or code editing.
 allowed-tools:
   - Bash(node scripts/index.js *)
-  - Bash(cat .firecrawl.json)
+  - Bash(cat .firecrawl/settings.json)
 ---
 
 # Firecrawl CLI
@@ -15,7 +15,7 @@ Before running any command, you MUST resolve credentials. Follow these steps **i
 
 ### Step 1: Check for project-level config
 
-Read `.firecrawl.json` in the project root (use `cat .firecrawl.json`).
+Read `.firecrawl/settings.json` in the project root (use `cat .firecrawl/settings.json`).
 
 If it exists and contains valid `apiKey`, `apiUrl`, and `dataDir`, use them as `$AUTH` flags for all CLI calls:
 
@@ -33,7 +33,7 @@ FIRECRAWL_DATA_DIR=<dataDir> node scripts/index.js <command> $AUTH ...
 
 ### Step 2: No project config — check global config
 
-If `.firecrawl.json` does not exist, run:
+If `.firecrawl/settings.json` does not exist, run:
 
 ```bash
 node scripts/index.js config
@@ -49,7 +49,7 @@ If neither project nor global config exists, ask the user to provide:
 2. **API URL** — the Firecrawl API endpoint (e.g., `https://api.firecrawl.dev`)
 3. **Data Dir** — directory for storing downloaded data (recommend `.firecrawl`)
 
-Once the user provides these values, create `.firecrawl.json` in the project root:
+Once the user provides these values, create `.firecrawl/settings.json` in the project root (create the `.firecrawl/` directory if it doesn't exist):
 
 ```json
 {
@@ -59,7 +59,7 @@ Once the user provides these values, create `.firecrawl.json` in the project roo
 }
 ```
 
-Then add `.firecrawl.json` to `.gitignore` (it contains secrets).
+Then add `.firecrawl/` to `.gitignore` (it contains secrets and temporary data).
 
 Finally, use the values as `$AUTH` flags as described in Step 1.
 
