@@ -5,6 +5,37 @@
  * Entry point for the CLI application
  */
 
+// Suppress the DEP0169 `url.parse()` deprecation warning.
+// This comes from the third-party dependency chain: axios → follow-redirects,
+// which still uses the legacy Node.js `url.parse()` API internally.
+// We cannot fix this upstream, so we filter it out to keep CLI output clean.
+{
+  const originalEmitWarning = process.emitWarning;
+  process.emitWarning = ((warning: string | Error, ...args: unknown[]) => {
+    // Check if this is the DEP0169 deprecation warning
+    if (
+      typeof warning === 'string' &&
+      warning.includes('url.parse()') &&
+      (args[0] === 'DeprecationWarning' ||
+        (typeof args[0] === 'object' &&
+          args[0] !== null &&
+          'code' in args[0] &&
+          (args[0] as Record<string, unknown>).code === 'DEP0169'))
+    ) {
+      return;
+    }
+    if (
+      warning instanceof Error &&
+      warning.message.includes('url.parse()') &&
+      ((warning as NodeJS.ErrnoException).code === 'DEP0169' ||
+        args[0] === 'DeprecationWarning')
+    ) {
+      return;
+    }
+    return originalEmitWarning.call(process, warning, ...args);
+  }) as typeof process.emitWarning;
+}
+
 import { Command } from 'commander';
 import {
   handleScrapeCommand,
